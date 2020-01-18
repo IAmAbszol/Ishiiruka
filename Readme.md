@@ -1,7 +1,7 @@
 # Forked copy of Dolphin - Slippi
 
 ## Purpose
-This fork serves as a repository to store changes to the Slippi dolphin client to provide a sufficient pipeline to extracting frame by frame images, created by Slippi. This will be fed into a deep learning model front-end for the images and back-end for the Slippi data processed.
+This fork serves as a repository to store changes to the Slippi dolphin client to provide a sufficient pipeline to extracting frame by frame images created by Slippi. This will be fed into a deep learning model front-end for the images and back-end for the Slippi data processed, afterwhich, the model will generate a JSON string that will be sent to Dolphin to be read.
 
 
 # Dolphin - A GameCube and Wii Emulator
