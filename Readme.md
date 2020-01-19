@@ -1,3 +1,10 @@
+# The Alfred Project
+
+## Purpose
+This fork serves as a repository to store changes to the Slippi dolphin client to provide a sufficient pipeline to extracting frame by frame images created by Slippi. This will be fed into a deep learning model; front-end for the images and back-end for the Slippi data processed, afterwhich, the model will generate a JSON string that will be sent to Dolphin to be read.
+
+To have everything transition smoothly, I had originally compiled the project to continually save screen shots in order to collect this data; at the time not knowing Slippi's underlying codebase was being controlled by the ASM codes provided. This README will serve as documentation on how to use Alfred and revisioning changes on what to expect in the coming months, enjoy.
+
 # Dolphin - A GameCube and Wii Emulator
 
 [Homepage](https://dolphin-emu.org/) | [Project Site](https://github.com/dolphin-emu/dolphin) | [Forums](https://forums.dolphin-emu.org/) | [Wiki](https://wiki.dolphin-emu.org/) | [Issue Tracker](https://bugs.dolphin-emu.org/projects/emulator/issues) | [Coding Style](https://github.com/dolphin-emu/dolphin/blob/master/Contributing.md) | [Transifex Page](https://www.transifex.com/projects/p/dolphin-emu/)
