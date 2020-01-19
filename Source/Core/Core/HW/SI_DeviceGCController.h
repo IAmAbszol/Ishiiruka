@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <InputComm.hpp>
+
 #include "Core/HW/GCPad.h"
 #include "Core/HW/SI_Device.h"
 #include "InputCommon/GCPadStatus.h"
@@ -85,6 +87,9 @@ public:
 	// Constructor
 	CSIDevice_GCController(SIDevices device, int _iDeviceNumber);
 
+	// Deconstructor
+	~CSIDevice_GCController();
+
 	// Run the SI Buffer
 	int RunBuffer(u8* _pBuffer, int _iLength) override;
 
@@ -108,9 +113,13 @@ public:
 	// Direct rumble to the right GC Controller
 	static void Rumble(int numPad, ControlState strength);
 
+	/** Input comm interface to retrieve pad status messages */
+	SocketComm::InputComm mInputComm;
+
 protected:
 	void Calibrate();
 	void HandleMoviePadStatus(GCPadStatus* PadStatus);
+
 };
 
 // "TaruKonga", the DK Bongo controller

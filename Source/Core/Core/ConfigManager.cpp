@@ -305,6 +305,9 @@ void SConfig::SaveCoreSettings(IniFile& ini)
 	core->Set("EnableCustomRTC", bEnableCustomRTC);
 	core->Set("CustomRTCValue", m_customRTCValue);
 	core->Set("AllowAllNetplayVersions", bAllowAllNetplayVersions);
+	core->Set("QoSEnabled", bQoSEnabled);
+	core->Set("AdapterWarning", bAdapterWarning);
+    core->Set("ShownLagReductionWarning", bHasShownLagReductionWarning);
 }
 
 void SConfig::SaveMovieSettings(IniFile& ini)
@@ -630,6 +633,9 @@ void SConfig::LoadCoreSettings(IniFile& ini)
 	// Default to seconds between 1.1.1970 and 1.1.2000
 	core->Get("CustomRTCValue", &m_customRTCValue, 946684800);
 	core->Get("AllowAllNetplayVersions", &bAllowAllNetplayVersions, false);
+	core->Get("QoSEnabled", &bQoSEnabled, true);
+	core->Get("AdapterWarning", &bAdapterWarning, true);
+    core->Get("ShownLagReductionWarning", &bHasShownLagReductionWarning, false);
 }
 
 void SConfig::LoadMovieSettings(IniFile& ini)
@@ -665,6 +671,10 @@ void SConfig::LoadDSPSettings(IniFile& ini)
 #endif
 	dsp->Get("Volume", &m_Volume, 100);
 	dsp->Get("CaptureLog", &m_DSPCaptureLog, false);
+
+	// fix 5.8b style setting
+	if(sBackend == "Exclusive-mode WASAPI")
+		sBackend = "Exclusive WASAPI on default device";
 
 	m_IsMuted = false;
 }
@@ -768,6 +778,7 @@ void SConfig::LoadDefaults()
 	iBBDumpPort = -1;
 	iVideoRate = 8;
 	bHalfAudioRate = false;
+	iPollingMethod = POLLING_CONSOLE;
 	bSyncGPU = false;
 	bFastDiscSpeed = false;
 	m_strWiiSDCardPath = File::GetUserPath(F_WIISDCARD_IDX);
@@ -880,7 +891,7 @@ bool SConfig::AutoSetup(EBootBS2 _BootBS2)
 			m_strGameID = pVolume->GetGameID();
 			m_revision = pVolume->GetRevision();
 
-			if(m_strGameID == "GALE01")
+			if(m_strGameID == "GALE01" || m_strGameID == "GALJ01")
 			{
 				m_gameType = GAMETYPE_MELEE_NTSC;
 

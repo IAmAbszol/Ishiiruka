@@ -5,7 +5,9 @@
 #include <algorithm>
 #include <libusb.h>
 #include <mutex>
+#include <iostream>
 
+#include "Common/Event.h"
 #include "Common/Flag.h"
 #include "Common/Logging/Log.h"
 #include "Common/Thread.h"
@@ -40,8 +42,12 @@ static u8 s_controller_payload_swap[37];
 
 static std::atomic<int> s_controller_payload_size = { 0 };
 
-static std::thread s_adapter_thread;
+static std::thread s_adapter_input_thread;
+static std::thread s_adapter_output_thread;
 static Common::Flag s_adapter_thread_running;
+
+static Common::Event s_rumble_data_available;
+static unsigned char s_latest_rumble_data[5];
 
 static std::mutex s_init_mutex;
 static std::thread s_adapter_detect_thread;
@@ -61,13 +67,22 @@ static u8 s_endpoint_out = 0;
 
 static u64 s_last_init = 0;
 
+bool adapter_error = false;
+
+bool AdapterError()
+{
+	return adapter_error && s_adapter_thread_running.IsSet();
+}
+
 static void Read()
 {
+	adapter_error = false;
+
 	int payload_size = 0;
 	while (s_adapter_thread_running.IsSet())
 	{
-		libusb_interrupt_transfer(s_handle, s_endpoint_in, s_controller_payload_swap,
-			sizeof(s_controller_payload_swap), &payload_size, 16);
+		adapter_error = libusb_interrupt_transfer(s_handle, s_endpoint_in, s_controller_payload_swap,
+			sizeof(s_controller_payload_swap), &payload_size, 16) != LIBUSB_SUCCESS && SConfig::GetInstance().bAdapterWarning;
 
 		{
 			std::lock_guard<std::mutex> lk(s_mutex);
@@ -77,6 +92,18 @@ static void Read()
 
 		Common::YieldCPU();
 	}
+}
+
+static void Write()
+{
+	int size = 0;
+	while (s_adapter_thread_running.IsSet())
+	{
+		if (s_rumble_data_available.WaitFor(std::chrono::milliseconds(100)))
+			libusb_interrupt_transfer(s_handle, s_endpoint_out, s_latest_rumble_data, sizeof(s_latest_rumble_data), &size, 16);
+	}
+
+	s_rumble_data_available.Reset();
 }
 
 #if defined(LIBUSB_API_VERSION) && LIBUSB_API_VERSION >= 0x01000102
@@ -316,7 +343,8 @@ static void AddGCAdapter(libusb_device* device)
 	libusb_interrupt_transfer(s_handle, s_endpoint_out, &payload, sizeof(payload), &tmp, 16);
 
 	s_adapter_thread_running.Set(true);
-	s_adapter_thread = std::thread(Read);
+    s_adapter_input_thread = std::thread(Read);
+    s_adapter_output_thread = std::thread(Write);
 
 	s_detected = true;
 	if (s_detect_callback != nullptr)
@@ -352,7 +380,8 @@ static void Reset()
 
 	if (s_adapter_thread_running.TestAndClear())
 	{
-		s_adapter_thread.join();
+		s_adapter_input_thread.join();
+		s_adapter_output_thread.join();
 	}
 
 	for (int i = 0; i < MAX_SI_CHANNELS; i++)
@@ -378,6 +407,16 @@ GCPadStatus Input(int chan)
 
 	if (s_handle == nullptr || !s_detected)
 		return{};
+
+	if(AdapterError())
+	{
+		GCPadStatus centered_status = {0};
+		centered_status.stickX = centered_status.stickY =
+		centered_status.substickX = centered_status.substickY =
+		/* these are all the same */ GCPadStatus::MAIN_STICK_CENTER_X;
+
+		return centered_status;
+	}
 
 	int payload_size = 0;
 	u8 controller_payload_copy[37];
@@ -453,12 +492,14 @@ GCPadStatus Input(int chan)
 			pad.triggerLeft = controller_payload_copy[1 + (9 * chan) + 7];
 			pad.triggerRight = controller_payload_copy[1 + (9 * chan) + 8];
 		}
-		else if (!Core::g_want_determinism)
+		else
 		{
-			// This is a hack to prevent a desync due to SI devices
-			// being different and returning different values.
-			// The corresponding code in DeviceGCAdapter has the same check
-			pad.button = PAD_ERR_STATUS;
+			GCPadStatus centered_status = {0};
+			centered_status.stickX = centered_status.stickY =
+			centered_status.substickX = centered_status.substickY =
+			/* these are all the same */ GCPadStatus::MAIN_STICK_CENTER_X;
+
+			return centered_status;
 		}
 	}
 
@@ -497,13 +538,11 @@ static void ResetRumbleLockNeeded()
 
 	std::fill(std::begin(s_controller_rumble), std::end(s_controller_rumble), 0);
 
-	unsigned char rumble[5] = { 0x11, s_controller_rumble[0], s_controller_rumble[1],
-														 s_controller_rumble[2], s_controller_rumble[3] };
-
-	int size = 0;
-	libusb_interrupt_transfer(s_handle, s_endpoint_out, rumble, sizeof(rumble), &size, 16);
-
-	INFO_LOG(SERIALINTERFACE, "Rumble state reset");
+	s_latest_rumble_data[0] = 0x11;	
+	for (int i = 0; i < 4; i++)
+		s_latest_rumble_data[i + 1] = s_controller_rumble[i];
+		
+	s_rumble_data_available.Set();
 }
 
 void Output(int chan, u8 rumble_command)

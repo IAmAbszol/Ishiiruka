@@ -13,7 +13,10 @@
 #include "Core/ConfigManager.h"
 #include "Core/GeckoCode.h"
 #include "Core/HW/Memmap.h"
+#include "Core/NetPlayProto.h"
 #include "Core/PowerPC/PowerPC.h"
+
+#include <iostream>
 
 namespace Gecko
 {
@@ -55,6 +58,37 @@ static bool code_handler_installed = false;
 static std::vector<GeckoCode> active_codes;
 static std::mutex active_codes_lock;
 
+static bool IsEnabledMeleeCode(const GeckoCode& code)
+{
+    if(SConfig::GetInstance().bMeleeForceWidescreen && code.name == "Widescreen 16:9")
+        return true;
+        
+    if(NetPlay::IsNetPlayRunning() && SConfig::GetInstance().iLagReductionCode != MELEE_LAG_REDUCTION_CODE_UNSET)
+    {
+        if(SConfig::GetInstance().iLagReductionCode == MELEE_LAG_REDUCTION_CODE_NORMAL)
+            return code.name.find("Normal Lag Reduction") != std::string::npos;
+
+        if(SConfig::GetInstance().iLagReductionCode == MELEE_LAG_REDUCTION_CODE_PERFORMANCE)
+            return code.name.find("Performance Lag Reduction") != std::string::npos;
+    }
+
+    return false;
+}
+
+static bool IsDisabledMeleeCode(const GeckoCode& code)
+{
+    if(NetPlay::IsNetPlayRunning() && SConfig::GetInstance().iLagReductionCode != MELEE_LAG_REDUCTION_CODE_UNSET)
+    {
+        if(SConfig::GetInstance().iLagReductionCode == MELEE_LAG_REDUCTION_CODE_NORMAL)
+            return code.name.find("Performance Lag Reduction") != std::string::npos;
+
+        if(SConfig::GetInstance().iLagReductionCode == MELEE_LAG_REDUCTION_CODE_PERFORMANCE)
+            return code.name.find("Normal Lag Reduction") != std::string::npos;
+    }
+
+    return false;
+}
+
 void SetActiveCodes(const std::vector<GeckoCode>& gcodes)
 {
 	std::lock_guard<std::mutex> lk(active_codes_lock);
@@ -63,8 +97,8 @@ void SetActiveCodes(const std::vector<GeckoCode>& gcodes)
 
 	// add enabled codes
 	for (const GeckoCode& gecko_code : gcodes)
-	{
-		if (gecko_code.enabled)
+	{        
+		if ((gecko_code.enabled && !IsDisabledMeleeCode(gecko_code)) || IsEnabledMeleeCode(gecko_code))
 		{
 			// TODO: apply modifiers
 			// TODO: don't need description or creator string, just takin up memory
@@ -117,6 +151,13 @@ static bool InstallCodeHandler()
 		codelist_end_address = 0x8019AF4C;
 		PowerPC::HostWrite_U32(0x3DE08019, 0x80001f58);
 		PowerPC::HostWrite_U32(0x61EF10E0, 0x80001f5C);
+
+		// Here we are replacing a line in the codehandler with a blr.
+		// The reason for this is that this is the section of the codehandler
+		// that attempts to read/write commands for the USB Gecko. These calls
+		// were sometimes interfering with the Slippi EXI calls and causing
+		// the game to loop infinitely in EXISync.
+		PowerPC::HostWrite_U32(0x4E800020, 0x80001D6C);
 	}
 
 	// Write a magic value to 'gameid' (codehandleronly does not actually read this).
@@ -132,7 +173,7 @@ static bool InstallCodeHandler()
 
 	for (const GeckoCode& active_code : active_codes)
 	{
-		if (active_code.enabled)
+		if ((active_code.enabled && !IsDisabledMeleeCode(active_code)) || IsEnabledMeleeCode(active_code))
 		{
 			for (const GeckoCode::Code& code : active_code.codes)
 			{

@@ -39,6 +39,7 @@
 #include "Core/Movie.h"
 #include "Core/NetPlayProto.h"
 #include "VideoCommon/VideoBackendBase.h"
+#include "VideoCommon/OnScreenDisplay.h"
 
 namespace BootManager
 {
@@ -79,6 +80,7 @@ private:
 	bool bRSHACK;
 	int iVideoRate;
 	bool bHalfAudioRate;
+	PollingMethod iPollingMethod;
 	int iSelectedLanguage;
 	int iCPUCore;
 	int Volume;
@@ -121,6 +123,7 @@ void ConfigCache::SaveConfig(const SConfig& config)
 	m_strGPUDeterminismMode = config.m_strGPUDeterminismMode;
 	iVideoRate = config.iVideoRate;
 	bHalfAudioRate = config.bHalfAudioRate;
+	iPollingMethod = config.iPollingMethod;
 	bTimeStretching = config.bTimeStretching;
 	bRSHACK = config.bRSHACK;
 	m_OCEnable = config.m_OCEnable;
@@ -161,6 +164,7 @@ void ConfigCache::RestoreConfig(SConfig* config)
 	config->iCPUCore = iCPUCore;
 	config->iVideoRate = iVideoRate;
 	config->bHalfAudioRate = bHalfAudioRate;
+	config->iPollingMethod = iPollingMethod;
 	config->bTimeStretching = bTimeStretching;
 	config->bRSHACK = bRSHACK;
 	config->m_OCEnable = m_OCEnable;
@@ -260,6 +264,12 @@ bool BootCore(const std::string& _rFilename)
 		core_section->Get("DCBZ", &StartUp.bDCBZOFF, StartUp.bDCBZOFF);
 		core_section->Get("Video_Rate", &StartUp.iVideoRate, StartUp.iVideoRate);
 		core_section->Get("HalfAudioRate", &StartUp.bHalfAudioRate, StartUp.bHalfAudioRate);
+
+		std::string polling_method = StartUp.iPollingMethod == POLLING_ONSIREAD ? "OnSIRead" : "Console";
+		core_section->Get("PollingMethod", &polling_method, polling_method);
+
+		StartUp.iPollingMethod = polling_method == "OnSIRead" ? POLLING_ONSIREAD : POLLING_CONSOLE;
+
 		core_section->Get("TimeStretching", &StartUp.bTimeStretching, StartUp.bTimeStretching);
 		core_section->Get("RSHACK", &StartUp.bRSHACK, StartUp.bRSHACK);
 		core_section->Get("SyncGPU", &StartUp.bSyncGPU, StartUp.bSyncGPU);
@@ -365,14 +375,40 @@ bool BootCore(const std::string& _rFilename)
 		SConfig::GetInstance().m_OCEnable = g_NetPlaySettings.m_OCEnable;
 		SConfig::GetInstance().m_OCFactor = g_NetPlaySettings.m_OCFactor;
 		SConfig::GetInstance().m_EXIDevice[0] = g_NetPlaySettings.m_EXIDevice[0];
-		SConfig::GetInstance().m_EXIDevice[1] = g_NetPlaySettings.m_EXIDevice[1];
+
+		// When this is true, will always use Slippi locally. Otherwise it'll use whatever is configured
+		// This makes it possible for one person to use Slippi and the other to not, hoping this is fine
+		bool isSlippiInPortB = SConfig::GetInstance().m_EXIDevice[1] == TEXIDevices::EXIDEVICE_SLIPPI;
+		bool isNoneInPortB = SConfig::GetInstance().m_EXIDevice[1] == TEXIDevices::EXIDEVICE_NONE;
+
+		bool oppSlippiInPortB = g_NetPlaySettings.m_EXIDevice[1] == TEXIDevices::EXIDEVICE_SLIPPI;
+		bool oppNoneInPortB = g_NetPlaySettings.m_EXIDevice[1] == TEXIDevices::EXIDEVICE_NONE;
+
+		if (oppSlippiInPortB && isNoneInPortB)
+		{
+			SConfig::GetInstance().m_EXIDevice[1] = TEXIDevices::EXIDEVICE_NONE;
+		}
+		else if (oppNoneInPortB && isSlippiInPortB)
+		{
+			SConfig::GetInstance().m_EXIDevice[1] = TEXIDevices::EXIDEVICE_SLIPPI;
+		}
+		else
+		{
+			// This will just grab what opp is using
+			SConfig::GetInstance().m_EXIDevice[1] = g_NetPlaySettings.m_EXIDevice[1];
+		}
+
 		config_cache.bSetEXIDevice[0] = true;
 		config_cache.bSetEXIDevice[1] = true;
+        StartUp.iLagReductionCode = g_NetPlaySettings.m_LagReduction;
+        StartUp.bMeleeForceWidescreen = g_NetPlaySettings.m_MeleeForceWidescreen;
 	}
 	else
 	{
 		g_SRAM_netplay_initialized = false;
 	}
+
+    OSD::Chat::toggled = false;
 
 	// Apply overrides
 	// Some NTSC GameCube games such as Baten Kaitos react strangely to language settings that would

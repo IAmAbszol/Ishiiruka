@@ -296,6 +296,7 @@ if(APPLE)
 	# Note that the SDK determines the maximum version of which optional
 	# features can be used, not the minimum required version to run.
 	set(OSX_MIN_VERSION "10.9")
+	set(CMAKE_OSX_SYSROOT "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk")
 	set(TARGET_FLAGS "${TARGET_FLAGS} -mmacosx-version-min=${OSX_MIN_VERSION}")
 	# Do not warn about frameworks that are not available on all architectures.
 	# This avoids a warning when linking with QuickTime.
@@ -306,7 +307,7 @@ if(APPLE)
 	# Target flags apply to both C and C++ compilation.
 	# CMake passes these to the compiler on the link command line as well.
 	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TARGET_FLAGS}")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TARGET_FLAGS}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TARGET_FLAGS} -D__ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES=1")
 
 	# Linker flags.
 	# Drop unreachable code and data.
@@ -658,6 +659,16 @@ include_directories(Externals/Bochs_disasm)
 
 add_subdirectory(Externals/glslang)
 
+add_subdirectory(Externals/SlippiLib)
+include_directories(Externals/SlippiLib)
+
+add_definitions(-fexceptions)
+add_subdirectory(Externals/yamlcpp)
+include_directories(Externals/yamlcpp)
+add_subdirectory(Externals/SocketComm)
+include_directories(Externals/SocketComm)
+include_directories(Externals/nlohmann)
+
 if(USE_SHARED_ENET)
 	check_lib(ENET libenet enet enet/enet.h QUIET)
 	include(CheckSymbolExists)
@@ -735,16 +746,10 @@ else()
 	set(PNG png)
 endif()
 
-if(NOT APPLE)
-	check_lib(SOUNDTOUCH soundtouch SoundTouch soundtouch/SoundTouch.h QUIET)
-endif()
-if (SOUNDTOUCH_FOUND)
-	message("Using shared soundtouch")
-else()
-	message("Using static soundtouch from Externals")
-	add_subdirectory(Externals/soundtouch)
-	include_directories(Externals)
-endif()
+# Always use soundtouch from Externals
+message("Using static soundtouch from Externals")
+add_subdirectory(Externals/soundtouch)
+include_directories(Externals)
 
 if(ENABLE_SDL)
 	include(FindSDL2 OPTIONAL)
@@ -834,6 +839,9 @@ else()
 	set(CURL_LIBRARIES curl)
 	include_directories(BEFORE Externals/curl/include)
 endif()
+
+add_subdirectory(Externals/cubeb)
+include_directories(BEFORE Externals/cubeb/include)
 
 if(NOT APPLE)
 	check_lib(SOIL "(no .pc for SOIL)" SOIL SOIL/SOIL.h QUIET)

@@ -97,7 +97,7 @@ NetPlayServer::NetPlayServer(const u16 port, bool traversal, const std::string& 
 		is_connected = true;
 		m_do_loop = true;
 		m_thread = std::thread(&NetPlayServer::ThreadFunc, this);
-		m_target_buffer_size = 8;
+		m_minimum_buffer_size = 6;
 	}
 }
 
@@ -107,7 +107,7 @@ void NetPlayServer::ThreadFunc()
 	while (m_do_loop)
 	{
 		// update pings every so many seconds
-		if ((m_ping_timer.GetTimeElapsed() > 1000) || m_update_pings)
+		if ((m_ping_timer.GetTimeElapsed() > 250) || m_update_pings)
 		{
 			m_ping_key = Common::Timer::GetTimeMs();
 
@@ -269,6 +269,7 @@ unsigned int NetPlayServer::OnConnect(ENetPeer* socket)
 	Client player;
 	player.pid = pid;
 	player.socket = socket;
+	player.buffer = m_minimum_buffer_size;
 	rpac >> player.revision;
 	rpac >> player.name;
 
@@ -306,8 +307,8 @@ unsigned int NetPlayServer::OnConnect(ENetPeer* socket)
 
 	// send the pad buffer value
 	spac.clear();
-	spac << (MessageId)NP_MSG_PAD_BUFFER;
-	spac << (u32)m_target_buffer_size;
+	spac << (MessageId)NP_MSG_PAD_BUFFER_MINIMUM;
+	spac << (u32)m_minimum_buffer_size;
 	Send(player.socket, spac);
 
 	// sync GC SRAM with new client
@@ -337,6 +338,11 @@ unsigned int NetPlayServer::OnConnect(ENetPeer* socket)
 		spac << static_cast<MessageId>(NP_MSG_GAME_STATUS);
 		spac << p.second.pid << static_cast<u32>(p.second.game_status);
 		Send(player.socket, spac);
+
+		spac.clear();
+		spac << static_cast<MessageId>(NP_MSG_PAD_BUFFER_PLAYER);
+		spac << p.second.pid << p.second.buffer;
+		Send(player.socket, spac);
 	}
 
 	// add client to the player list
@@ -359,7 +365,7 @@ unsigned int NetPlayServer::OnConnect(ENetPeer* socket)
 	sin.sin_port = ENET_HOST_TO_NET_16(player.socket->host->address.port);
 	sin.sin_addr.s_addr = player.socket->host->address.host;
 
-	if(QOSCreateHandle(&ver, &player.qos_handle))
+	if(SConfig::GetInstance().bQoSEnabled && QOSCreateHandle(&ver, &player.qos_handle))
 	{
 		QOSAddSocketToFlow(player.qos_handle, player.socket->host->socket, reinterpret_cast<PSOCKADDR>(&sin),
 			// this is 0x38
@@ -371,8 +377,8 @@ unsigned int NetPlayServer::OnConnect(ENetPeer* socket)
 
 		// this will fail if we're not admin
 		// sets DSCP to the same as linux (0x2e)
-		QOSSetFlow(m_qos_handle,
-			m_qos_flow_id,
+		QOSSetFlow(player.qos_handle,
+			player.qos_flow_id,
 			QOSSetOutgoingDSCPValue,
 			sizeof(DWORD),
 			&dscp,
@@ -380,16 +386,19 @@ unsigned int NetPlayServer::OnConnect(ENetPeer* socket)
 			nullptr);
 	}
 #else
-	// highest priority
-	int priority = 7;
+	if(SConfig::GetInstance().bQoSEnabled)
+	{
 #ifdef __linux__
-	setsockopt(player.socket->host->socket, SOL_SOCKET, SO_PRIORITY, &priority, sizeof(priority));
+		// highest priority
+		int priority = 7;
+		setsockopt(player.socket->host->socket, SOL_SOCKET, SO_PRIORITY, &priority, sizeof(priority));
 #endif
 
-	// https://www.tucny.com/Home/dscp-tos
-	// ef is better than cs7
-	int tos_val = 0xb8;
-	setsockopt(player.socket->host->socket, IPPROTO_IP, IP_TOS, &tos_val, sizeof(tos_val));
+		// https://www.tucny.com/Home/dscp-tos
+		// ef is better than cs7
+		int tos_val = 0xb8;
+		setsockopt(player.socket->host->socket, IPPROTO_IP, IP_TOS, &tos_val, sizeof(tos_val));
+	}
 #endif
 
 	return 0;
@@ -503,16 +512,16 @@ void NetPlayServer::UpdateWiimoteMapping()
 }
 
 // called from ---GUI--- thread and ---NETPLAY--- thread
-void NetPlayServer::AdjustPadBufferSize(unsigned int size)
+void NetPlayServer::AdjustMinimumPadBufferSize(unsigned int size)
 {
 	std::lock_guard<std::recursive_mutex> lkg(m_crit.game);
 
-	m_target_buffer_size = size;
+	m_minimum_buffer_size = size;
 
 	// tell clients to change buffer size
 	auto spac = std::make_unique<sf::Packet>();
-	*spac << static_cast<MessageId>(NP_MSG_PAD_BUFFER);
-	*spac << static_cast<u32>(m_target_buffer_size);
+	*spac << static_cast<MessageId>(NP_MSG_PAD_BUFFER_MINIMUM);
+	*spac << static_cast<u32>(m_minimum_buffer_size);
 
 	SendAsyncToClients(std::move(spac));
 }
@@ -547,6 +556,37 @@ unsigned int NetPlayServer::OnData(sf::Packet& packet, Client& player)
 		spac << (MessageId)NP_MSG_CHAT_MESSAGE;
 		spac << player.pid;
 		spac << msg;
+
+		SendToClients(spac, player.pid);
+	}
+	break;
+
+    case NP_MSG_REPORT_FRAME_TIME:
+    {
+		float frame_time;
+		packet >> frame_time;
+
+		// send msg to other clients
+		sf::Packet spac;
+		spac << (MessageId)NP_MSG_REPORT_FRAME_TIME;
+		spac << player.pid;
+		spac << frame_time;
+
+		SendToClients(spac, player.pid);
+    }
+    break;
+
+	case NP_MSG_PAD_BUFFER_PLAYER:
+	{
+		u32 buffer;
+		packet >> buffer;
+
+		player.buffer = buffer;
+
+		sf::Packet spac;
+		spac << (MessageId)NP_MSG_PAD_BUFFER_PLAYER;
+		spac << player.pid;
+		spac << buffer;
 
 		SendToClients(spac, player.pid);
 	}
@@ -840,7 +880,7 @@ bool NetPlayServer::StartGame()
 	m_current_game = Common::Timer::GetTimeMs();
 
 	// no change, just update with clients
-	AdjustPadBufferSize(m_target_buffer_size);
+	AdjustMinimumPadBufferSize(m_minimum_buffer_size);
 
 	if (SConfig::GetInstance().bEnableCustomRTC)
 		g_netplay_initial_rtc = SConfig::GetInstance().m_customRTCValue;
@@ -865,6 +905,8 @@ bool NetPlayServer::StartGame()
 	*spac << m_settings.m_OCFactor;
 	*spac << m_settings.m_EXIDevice[0];
 	*spac << m_settings.m_EXIDevice[1];
+    *spac << (int)m_settings.m_LagReduction;
+    *spac << m_settings.m_MeleeForceWidescreen;
 	*spac << (u32)g_netplay_initial_rtc;
 	*spac << (u32)(g_netplay_initial_rtc >> 32);
 

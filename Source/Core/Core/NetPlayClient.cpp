@@ -15,6 +15,7 @@
 #include "Common/MD5.h"
 #include "Common/MsgHandler.h"
 #include "Common/Timer.h"
+#include "Core/Core.h"
 #include "Core/ConfigManager.h"
 #include "Core/HW/EXI_DeviceIPL.h"
 #include "Core/HW/SI.h"
@@ -70,7 +71,7 @@ NetPlayClient::~NetPlayClient()
 NetPlayClient::NetPlayClient(const std::string& address, const u16 port, NetPlayUI* dialog,
 	const std::string& name, bool traversal,
 	const std::string& centralServer, u16 centralPort)
-	: m_dialog(dialog), m_player_name(name)
+	: dialog(dialog), m_player_name(name)
 #ifdef _WIN32
 	, m_qos_handle(nullptr), m_qos_flow_id(0)
 #endif
@@ -224,17 +225,35 @@ bool NetPlayClient::Connect()
 		player.name = m_player_name;
 		player.pid = m_pid;
 		player.revision = netplay_dolphin_ver;
+		player.buffer = 0 /* will be raised once we get the packet */;
 
 		// add self to player list
 		m_players[m_pid] = player;
-		m_local_player = &m_players[m_pid];
+		local_player = &m_players[m_pid];
 
-		m_dialog->Update();
+		dialog->Update();
 
 		m_is_connected = true;
 
 		return true;
 	}
+}
+
+// called from ---GUI--- and ---NETPLAY--- thread
+void NetPlayClient::SetLocalPlayerBuffer(u32 buffer)
+{
+	std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+
+	local_player->buffer = buffer;
+	if(local_player->buffer < m_minimum_buffer_size)
+		local_player->buffer = m_minimum_buffer_size;
+
+	auto spac = std::make_unique<sf::Packet>();
+	*spac << static_cast<MessageId>(NP_MSG_PAD_BUFFER_PLAYER);
+	*spac << local_player->buffer;
+	SendAsync(std::move(spac));
+
+	dialog->OnPlayerPadBufferChanged(local_player->buffer);
 }
 
 // called from ---NETPLAY--- thread
@@ -257,7 +276,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 			m_players[player.pid] = player;
 		}
 
-		m_dialog->Update();
+		dialog->Update();
 	}
 	break;
 
@@ -271,7 +290,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 			m_players.erase(m_players.find(pid));
 		}
 
-		m_dialog->Update();
+		dialog->Update();
 	}
 	break;
 
@@ -287,9 +306,21 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 
 		// add to gui
 		std::ostringstream ss;
-		ss << player.name << '[' << (char)(pid + '0') << "]: " << msg;
+		ss << "[" << player.name << FindPlayerPadName(&player) << "]: " << msg;
 
-		m_dialog->AppendChat(ss.str());
+		dialog->AppendChat(ss.str(), false);
+	}
+	break;
+
+    case NP_MSG_REPORT_FRAME_TIME:
+	{
+		PlayerId pid;
+		packet >> pid;
+
+		float ftime;
+		packet >> ftime;
+
+		m_players[pid].frame_time = ftime;
 	}
 	break;
 
@@ -302,7 +333,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 
 		UpdateDevices();
 
-		m_dialog->Update();
+		dialog->Update();
 	}
 	break;
 
@@ -313,7 +344,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 			packet >> mapping;
 		}
 
-		m_dialog->Update();
+		dialog->Update();
 	}
 	break;
 
@@ -350,13 +381,28 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 	}
 	break;
 
-	case NP_MSG_PAD_BUFFER:
+	case NP_MSG_PAD_BUFFER_MINIMUM:
 	{
 		u32 size = 0;
 		packet >> size;
 
-		m_target_buffer_size = size;
-		m_dialog->OnPadBufferChanged(size);
+		m_minimum_buffer_size = size;
+		dialog->OnMinimumPadBufferChanged(size);
+
+		if(local_player->buffer < m_minimum_buffer_size)
+			SetLocalPlayerBuffer(m_minimum_buffer_size);
+	}
+	break;
+
+	case NP_MSG_PAD_BUFFER_PLAYER:
+	{
+		PlayerId pid;
+		packet >> pid;
+
+		{
+			std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
+			packet >> m_players[pid].buffer;
+		}
 	}
 	break;
 
@@ -368,12 +414,12 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 		}
 
 		// update gui
-		m_dialog->OnMsgChangeGame(m_selected_game);
+		dialog->OnMsgChangeGame(m_selected_game);
 
 		sf::Packet spac;
 		spac << static_cast<MessageId>(NP_MSG_GAME_STATUS);
 
-		PlayerGameStatus status = m_dialog->FindGame(m_selected_game).empty() ?
+		PlayerGameStatus status = dialog->FindGame(m_selected_game).empty() ?
 			PlayerGameStatus::NotFound :
 			PlayerGameStatus::Ok;
 
@@ -395,7 +441,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 			player.game_status = static_cast<PlayerGameStatus>(status);
 		}
 
-		m_dialog->Update();
+		dialog->Update();
 	}
 	break;
 
@@ -423,13 +469,18 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 			packet >> tmp;
 			g_NetPlaySettings.m_EXIDevice[1] = (TEXIDevices)tmp;
 
+            packet >> tmp;
+            g_NetPlaySettings.m_LagReduction = (MeleeLagReductionCode)tmp;
+
+            packet >> g_NetPlaySettings.m_MeleeForceWidescreen;
+
 			u32 time_low, time_high;
 			packet >> time_low;
 			packet >> time_high;
 			g_netplay_initial_rtc = time_low | ((u64)time_high << 32);
 		}
 
-		m_dialog->OnMsgStartGame();
+		dialog->OnMsgStartGame();
 	}
 	break;
 
@@ -437,7 +488,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 	case NP_MSG_DISABLE_GAME:
 	{
 		StopGame();
-		m_dialog->OnMsgStopGame();
+		dialog->OnMsgStopGame();
 	}
 	break;
 
@@ -466,7 +517,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 		}
 
 		DisplayPlayersPing();
-		m_dialog->Update();
+		dialog->Update();
 	}
 	break;
 
@@ -484,7 +535,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 			if (it != m_players.end())
 				player = it->second.name;
 		}
-		m_dialog->OnDesync(frame, player);
+		dialog->OnDesync(frame, player);
 	}
 	break;
 
@@ -520,7 +571,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 		packet >> pid;
 		packet >> progress;
 
-		m_dialog->SetMD5Progress(pid, progress);
+		dialog->SetMD5Progress(pid, progress);
 	}
 	break;
 
@@ -531,7 +582,7 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 		packet >> pid;
 		packet >> result;
 
-		m_dialog->SetMD5Result(pid, result);
+		dialog->SetMD5Result(pid, result);
 	}
 	break;
 
@@ -542,14 +593,14 @@ unsigned int NetPlayClient::OnData(sf::Packet& packet)
 		packet >> pid;
 		packet >> error;
 
-		m_dialog->SetMD5Result(pid, error);
+		dialog->SetMD5Result(pid, error);
 	}
 	break;
 
 	case NP_MSG_MD5_ABORT:
 	{
 		m_should_compute_MD5 = false;
-		m_dialog->AbortMD5();
+		dialog->AbortMD5();
 	}
 	break;
 
@@ -631,7 +682,7 @@ void NetPlayClient::ThreadFunc()
 #ifdef _WIN32
 	QOS_VERSION ver = { 1, 0 };
 
-	if(QOSCreateHandle(&ver, &m_qos_handle))
+	if(SConfig::GetInstance().bQoSEnabled && QOSCreateHandle(&ver, &m_qos_handle))
 	{
 		// from win32.c
 		struct sockaddr_in sin = { 0 };
@@ -662,22 +713,28 @@ void NetPlayClient::ThreadFunc()
 		}
 	}
 #else
-	// highest priority
-	int priority = 7;
+	if(SConfig::GetInstance().bQoSEnabled)
+	{
 #ifdef __linux__
-	setsockopt(m_server->host->socket, SOL_SOCKET, SO_PRIORITY, &priority, sizeof(priority));
+		// highest priority
+		int priority = 7;
+		setsockopt(m_server->host->socket, SOL_SOCKET, SO_PRIORITY, &priority, sizeof(priority));
 #endif
 
-	// https://www.tucny.com/Home/dscp-tos
-	// ef is better than cs7
-	int tos_val = 0xb8;
-	qos_success = setsockopt(m_server->host->socket, IPPROTO_IP, IP_TOS, &tos_val, sizeof(tos_val)) == 0;
+		// https://www.tucny.com/Home/dscp-tos
+		// ef is better than cs7
+		int tos_val = 0xb8;
+		qos_success = setsockopt(m_server->host->socket, IPPROTO_IP, IP_TOS, &tos_val, sizeof(tos_val)) == 0;
+	}
 #endif
 
-	if(qos_success)
-		m_dialog->AppendChat("QoS was successfully enabled, netplay packets should be prioritized over normal packets");
-	else
-		m_dialog->AppendChat("QoS couldn't be enabled, other network activity might interfere with netplay");
+	if(SConfig::GetInstance().bQoSEnabled)
+	{
+		if(qos_success)
+			dialog->AppendChat("QoS was successfully enabled, netplay packets should be prioritized over normal packets", false);
+		else
+			dialog->AppendChat("QoS couldn't be enabled, other network activity might interfere with netplay", false);
+	}
 
 	while (m_do_loop.IsSet())
 	{
@@ -703,7 +760,7 @@ void NetPlayClient::ThreadFunc()
 				enet_packet_destroy(netEvent.packet);
 				break;
 			case ENET_EVENT_TYPE_DISCONNECT:
-				m_dialog->OnConnectionLost();
+				dialog->OnConnectionLost();
 
 				if (m_is_running.IsSet())
 					StopGame();
@@ -755,6 +812,18 @@ void NetPlayClient::GetPlayerList(std::string& list, std::vector<int>& pid_list)
 		enumerate_player_controller_mappings(m_wiimote_map, player);
 
 		ss << " |\nPing: " << player.ping << "ms\n";
+
+        std::string frame_time_str = std::to_string(player.frame_time);
+        frame_time_str = frame_time_str.substr(0, 3);
+
+        while(frame_time_str.find(",") != std::string::npos)
+            frame_time_str[frame_time_str.find(",")] = '.';
+
+        int percent_of_full_frame = SConfig::GetInstance().bNTSC ? (int)(player.frame_time / (1000.0 / 60.0) * 100) : (int)(player.frame_time / (1000.0 / 50.0) * 100);
+
+        ss << "Frame time: " << (player.frame_time == 0 ? "(unknown)" : frame_time_str + " ms (" + std::to_string(percent_of_full_frame) + "% of max)") << "\n";
+
+		ss << "Buffer: " << player.buffer << "\n";
 		ss << "Status: ";
 
 		switch (player.game_status)
@@ -800,6 +869,18 @@ void NetPlayClient::SendChatMessage(const std::string& msg)
 	*spac << msg;
 
 	SendAsync(std::move(spac));
+}
+
+// called from ---CPU--- thread
+void NetPlayClient::ReportFrameTimeToServer(float frame_time)
+{
+	auto spac = std::make_unique<sf::Packet>();
+	*spac << static_cast<MessageId>(NP_MSG_REPORT_FRAME_TIME);
+	*spac << frame_time;
+
+	SendAsync(std::move(spac));
+
+    local_player->frame_time = frame_time;
 }
 
 // called from ---CPU--- thread
@@ -867,7 +948,7 @@ bool NetPlayClient::StartGame(const std::string& path)
 
 	ClearBuffers();
 
-	if (m_dialog->IsRecording())
+	if (dialog->IsRecording())
 	{
 		if (Movie::IsReadOnly())
 			Movie::SetReadOnly(false);
@@ -885,7 +966,7 @@ bool NetPlayClient::StartGame(const std::string& path)
 
 	// boot game
 
-	m_dialog->BootGame(path);
+	dialog->BootGame(path);
 
 	if (SConfig::GetInstance().bWii)
 	{
@@ -916,7 +997,7 @@ void NetPlayClient::UpdateDevices()
 		// Use local controller types for local controllers if they are compatible
 		// Only GCController-like controllers are supported, GBA and similar
 		// exotic devices are not supported on netplay.
-		if (player_id == m_local_player->pid)
+		if (player_id == local_player->pid)
 		{
 			if (SIDevice_IsGCController(SConfig::GetInstance().m_SIDevice[local_pad]))
 			{
@@ -967,7 +1048,7 @@ void NetPlayClient::OnTraversalStateChanged()
 		m_traversal_client->m_State == TraversalClient::Failure)
 	{
 		Disconnect();
-		m_dialog->OnTraversalError(m_traversal_client->m_FailureReason);
+		dialog->OnTraversalError(m_traversal_client->m_FailureReason);
 	}
 }
 
@@ -1039,6 +1120,9 @@ bool NetPlayClient::GetNetPads(const int pad_nb, GCPadStatus* pad_status)
 void NetPlayClient::SendNetPad(int pad_nb)
 {
 	GCPadStatus status = {0};
+	status.stickX = status.stickY =
+	status.substickX = status.substickY =
+	/* these are all the same */ GCPadStatus::MAIN_STICK_CENTER_X;
 
 	// this is the old behavior
 	// just a small lag decrease
@@ -1048,20 +1132,23 @@ void NetPlayClient::SendNetPad(int pad_nb)
 		{
 			int ingame_pad = LocalPadToInGamePad(i);
 
-			if(m_pad_buffer[ingame_pad].Size() <= m_target_buffer_size / buffer_accuracy)
+			if(m_pad_buffer[ingame_pad].Size() <= BufferSizeForPort(ingame_pad) / (SConfig::GetInstance().iPollingMethod == POLLING_ONSIREAD ? buffer_accuracy : 1))
 			{
-				switch (SConfig::GetInstance().m_SIDevice[i])
-				{
-				case SIDEVICE_WIIU_ADAPTER:
-					status = GCAdapter::Input(i);
-					break;
-				case SIDEVICE_GC_CONTROLLER:
-				default:
-					status = Pad::GetStatus(i);
-					break;
-				}
+                if(!OSD::Chat::toggled)
+                {
+                    switch (SConfig::GetInstance().m_SIDevice[i])
+                    {
+                    case SIDEVICE_WIIU_ADAPTER:
+                        status = GCAdapter::Input(i);
+                        break;
+                    case SIDEVICE_GC_CONTROLLER:
+                    default:
+                        status = Pad::GetStatus(i);
+                        break;
+                    }
+                }
 
-				while (m_pad_buffer[ingame_pad].Size() <= m_target_buffer_size / buffer_accuracy)
+				while (m_pad_buffer[ingame_pad].Size() <= BufferSizeForPort(ingame_pad) / (SConfig::GetInstance().iPollingMethod == POLLING_ONSIREAD ? buffer_accuracy : 1))
 				{
 					m_pad_buffer[ingame_pad].Push(status);
 					SendPadState(ingame_pad, status);
@@ -1075,20 +1162,23 @@ void NetPlayClient::SendNetPad(int pad_nb)
 		int local_pad = InGamePadToLocalPad(pad_nb);
 		if(local_pad != 4)
 		{
-			if(m_pad_buffer[pad_nb].Size() <= m_target_buffer_size / buffer_accuracy)
+			if(m_pad_buffer[pad_nb].Size() <= BufferSizeForPort(pad_nb) / (SConfig::GetInstance().iPollingMethod == POLLING_ONSIREAD ? buffer_accuracy : 1))
 			{
-				switch (SConfig::GetInstance().m_SIDevice[local_pad])
-				{
-				case SIDEVICE_WIIU_ADAPTER:
-					status = GCAdapter::Input(local_pad);
-					break;
-				case SIDEVICE_GC_CONTROLLER:
-				default:
-					status = Pad::GetStatus(local_pad);
-					break;
-				}
+                if(!OSD::Chat::toggled)
+                {
+                    switch (SConfig::GetInstance().m_SIDevice[local_pad])
+                    {
+                    case SIDEVICE_WIIU_ADAPTER:
+                        status = GCAdapter::Input(local_pad);
+                        break;
+                    case SIDEVICE_GC_CONTROLLER:
+                    default:
+                        status = Pad::GetStatus(local_pad);
+                        break;
+                    }
+                }
 
-				while (m_pad_buffer[pad_nb].Size() <= m_target_buffer_size / buffer_accuracy)
+				while (m_pad_buffer[pad_nb].Size() <= BufferSizeForPort(pad_nb) / (SConfig::GetInstance().iPollingMethod == POLLING_ONSIREAD ? buffer_accuracy : 1))
 				{
 					m_pad_buffer[pad_nb].Push(status);
 					SendPadState(pad_nb, status);
@@ -1106,7 +1196,7 @@ bool NetPlayClient::WiimoteUpdate(int _number, u8* data, const u8 size, u8 repor
 		std::lock_guard<std::recursive_mutex> lkp(m_crit.players);
 
 		// Only send data, if this Wiimote is mapped to this player
-		if (m_wiimote_map[_number] == m_local_player->pid)
+		if (m_wiimote_map[_number] == local_player->pid)
 		{
 			nw.assign(data, data + size);
 			do
@@ -1116,7 +1206,7 @@ bool NetPlayClient::WiimoteUpdate(int _number, u8* data, const u8 size, u8 repor
 
 				SendWiimoteState(_number, nw);
 			} while (m_wiimote_buffer[_number].Size() <=
-				m_target_buffer_size * 200 /
+				m_minimum_buffer_size * 200 /
 				120);  // TODO: add a seperate setting for wiimote buffer?
 		}
 
@@ -1156,7 +1246,7 @@ bool NetPlayClient::WiimoteUpdate(int _number, u8* data, const u8 size, u8 repor
 			m_wiimote_buffer[_number].Pop(nw);
 
 			++tries;
-			if (tries > m_target_buffer_size * 200 / 120)
+			if (tries > m_minimum_buffer_size * 200 / 120)
 				break;
 		}
 
@@ -1184,7 +1274,10 @@ bool NetPlayClient::StopGame()
 	NetPlay_Disable();
 
 	// stop game
-	m_dialog->StopGame();
+	dialog->StopGame();
+
+    for(auto& player : m_players)
+        player.second.frame_time = 0;
 
 	return true;
 }
@@ -1210,7 +1303,7 @@ void NetPlayClient::Stop()
 bool NetPlayClient::LocalPlayerHasControllerMapped() const
 {
 	const auto mapping_matches_player_id = [this](const PadMapping& mapping) {
-		return mapping == m_local_player->pid;
+		return mapping == local_player->pid;
 	};
 
 	return std::any_of(m_pad_map.begin(), m_pad_map.end(), mapping_matches_player_id) ||
@@ -1226,14 +1319,14 @@ bool NetPlayClient::IsFirstInGamePad(int ingame_pad) const
 int NetPlayClient::NumLocalPads() const
 {
 	return static_cast<int>(std::count_if(m_pad_map.begin(), m_pad_map.end(), [this](auto mapping) {
-		return mapping == m_local_player->pid;
+		return mapping == local_player->pid;
 	}));
 }
 
 int NetPlayClient::InGamePadToLocalPad(int ingame_pad)
 {
 	// not our pad
-	if (m_pad_map[ingame_pad] != m_local_player->pid)
+	if (m_pad_map[ingame_pad] != local_player->pid)
 		return 4;
 
 	int local_pad = 0;
@@ -1241,7 +1334,7 @@ int NetPlayClient::InGamePadToLocalPad(int ingame_pad)
 
 	for (; pad < ingame_pad; pad++)
 	{
-		if (m_pad_map[pad] == m_local_player->pid)
+		if (m_pad_map[pad] == local_player->pid)
 			local_pad++;
 	}
 
@@ -1257,7 +1350,7 @@ int NetPlayClient::LocalPadToInGamePad(int local_pad)
 	int ingame_pad = 0;
 	for (; ingame_pad < 4; ingame_pad++)
 	{
-		if (m_pad_map[ingame_pad] == m_local_player->pid)
+		if (m_pad_map[ingame_pad] == local_player->pid)
 			local_pad_count++;
 
 		if (local_pad_count == local_pad)
@@ -1295,14 +1388,14 @@ void NetPlayClient::ComputeMD5(const std::string& file_identifier)
 	if (m_should_compute_MD5)
 		return;
 
-	m_dialog->ShowMD5Dialog(file_identifier);
+	dialog->ShowMD5Dialog(file_identifier);
 	m_should_compute_MD5 = true;
 
 	std::string file;
 	if (file_identifier == WII_SDCARD)
 		file = File::GetUserPath(F_WIISDCARD_IDX);
 	else
-		file = m_dialog->FindGame(file_identifier);
+		file = dialog->FindGame(file_identifier);
 
 	if (file.empty() || !File::Exists(file))
 	{

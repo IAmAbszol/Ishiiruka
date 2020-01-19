@@ -1,9 +1,3 @@
-# Forked copy of Dolphin - Slippi
-
-## Purpose
-This fork serves as a repository to store changes to the Slippi dolphin client to provide a sufficient pipeline to extracting frame by frame images created by Slippi. This will be fed into a deep learning model front-end for the images and back-end for the Slippi data processed, afterwhich, the model will generate a JSON string that will be sent to Dolphin to be read.
-
-
 # Dolphin - A GameCube and Wii Emulator
 
 [Homepage](https://dolphin-emu.org/) | [Project Site](https://github.com/dolphin-emu/dolphin) | [Forums](https://forums.dolphin-emu.org/) | [Wiki](https://wiki.dolphin-emu.org/) | [Issue Tracker](https://bugs.dolphin-emu.org/projects/emulator/issues) | [Coding Style](https://github.com/dolphin-emu/dolphin/blob/master/Contributing.md) | [Transifex Page](https://www.transifex.com/projects/p/dolphin-emu/)
@@ -41,9 +35,13 @@ Dolphin can only be installed on devices that satisfy the above requirements. At
 
 ## Building for Windows
 Use the solution file `Source/dolphin-emu.sln` to build Dolphin on Windows.
-Visual Studio 2015 Update 2 is a hard requirement. Other compilers might be
+Visual Studio 2017 is now used. Other compilers might be
 able to build Dolphin on Windows but have not been tested and are not
-recommended to be used. Git and Windows 10 SDK 10.0.10586.0 must be installed.
+recommended to be used. Git and [Windows 10 SDK 10.0.10586.0](http://www.microsoft.com/en-us/download/details.aspx?id=6812) must be installed.
+
+You will most likely have issues installing this, look at [this comment](https://stackoverflow.com/a/9401911) for how to fix it. Not sure everything in it is a hard requirement.
+
+If you have trouble with some `.lib` files missing, right click the Externals directory and click rebuild.
 
 An installer can be created by using the `Installer.nsi` script in the
 Installer directory. This will require the Nullsoft Scriptable Install System
@@ -63,6 +61,9 @@ missing packages yourself.
 4. `make`
 
 An application bundle will be created in `./Binaries`.
+
+If you are building on Mojave or later, you will need to install the 10.11 SDK to build because Quicktime has been removed in the latest SDKs. Find the sdk version here https://github.com/phracker/MacOSX-SDKs and copy it to 
+`/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs`. You should not need to modify the plist file as the project readme seems to indicate.
 
 ### Linux Global Build Steps:
 

@@ -2,6 +2,9 @@
 // Licensed under GPLv2+
 // Refer to the license.txt file included.
 
+#include <InputComm.hpp>
+#include <iostream>
+
 #include "Core/HW/SI_Device.h"
 #include "Common/ChunkFile.h"
 #include "Common/CommonTypes.h"
@@ -19,12 +22,18 @@
 // --- standard GameCube controller ---
 CSIDevice_GCController::CSIDevice_GCController(SIDevices device, int _iDeviceNumber)
 	: ISIDevice(device, _iDeviceNumber), m_TButtonComboStart(0), m_TButtonCombo(0),
-	m_LastButtonCombo(COMBO_NONE)
+	m_LastButtonCombo(COMBO_NONE), mInputComm(_iDeviceNumber, 55082) 
 {
 	// Dunno if we need to do this, game/lib should set it?
 	m_Mode = 0x03;
 
 	m_Calibrated = false;
+
+}
+
+CSIDevice_GCController::~CSIDevice_GCController()
+{
+	mInputComm.~InputComm();
 }
 
 void CSIDevice_GCController::Calibrate()
@@ -161,7 +170,9 @@ GCPadStatus CSIDevice_GCController::GetPadStatus()
 //  |_ ERR_STATUS (error on last GetData or SendCmd?)
 bool CSIDevice_GCController::GetData(u32& _Hi, u32& _Low)
 {
-	GCPadStatus PadStatus = GetPadStatus();
+	GCPadStatus PadStatus = GetPadStatus();	
+	mInputComm.GetUpdate(PadStatus);
+
 	if (HandleButtonCombos(PadStatus) == COMBO_ORIGIN)
 		PadStatus.button |= PAD_GET_ORIGIN;
 

@@ -94,6 +94,7 @@ set(SRCS	ActionReplay.cpp
 			HW/EXI_DeviceGecko.cpp
 			HW/EXI_DeviceIPL.cpp
 			HW/EXI_DeviceMemoryCard.cpp
+			HW/EXI_DeviceSlippi.cpp
 			HW/EXI_DeviceMic.cpp
 			HW/GCKeyboard.cpp
 			HW/GCKeyboardEmu.cpp
@@ -187,6 +188,7 @@ set(SRCS	ActionReplay.cpp
 			PowerPC/JitILCommon/JitILBase_Paired.cpp
 			PowerPC/JitILCommon/JitILBase_FloatingPoint.cpp
 			PowerPC/JitILCommon/JitILBase_Integer.cpp
+			Slippi/SlippiReplayComm.cpp
 			)
 
 if(_M_X86)
@@ -233,12 +235,15 @@ set(LIBS
 	audiocommon
 	bdisasm
 	common
+	cubeb
 	discio
 	enet
 	inputcommon
 	${LZO}
 	sfml-network
 	sfml-system
+	SlippiLib
+	SocketComm
 	videoogl
 	videosoftware
 	z
