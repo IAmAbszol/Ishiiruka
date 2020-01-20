@@ -1,6 +1,7 @@
 #include <chrono>
 #include <iostream>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "InputComm.hpp"
 #include "Common/MsgHandler.h"
@@ -32,10 +33,10 @@ InputComm::InputComm(u32 device_number, u16 port) :
 
 InputComm::~InputComm()
 {
+    mListenerSocket.unbind();
     if(mConnected)
     {
         mConnected = false;
-        mListenerSocket.unbind();
         mListenerThread.join();
     }
 }

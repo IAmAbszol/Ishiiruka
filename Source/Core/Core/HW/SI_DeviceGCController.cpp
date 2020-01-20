@@ -32,9 +32,7 @@ CSIDevice_GCController::CSIDevice_GCController(SIDevices device, int _iDeviceNum
 }
 
 CSIDevice_GCController::~CSIDevice_GCController()
-{
-	mInputComm.~InputComm();
-}
+{}
 
 void CSIDevice_GCController::Calibrate()
 {
