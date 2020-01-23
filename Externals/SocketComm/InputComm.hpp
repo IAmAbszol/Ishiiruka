@@ -21,7 +21,8 @@ namespace SocketComm
 
         /**
          * InputComm
-         * @param mPort port to listen on for incoming messages.
+         * @param device_number number of the device to differentiate the base port.
+         * @param port port to listen on for incoming messages.
          */
         InputComm(uint32_t device_number, uint16_t port);
 
@@ -40,9 +41,12 @@ namespace SocketComm
 
     protected:
 
+        /**
+         * ReadSocket
+         */
         void ReadSocket();
 
-        /** TODO Remove and check status directly with mListenerSocket */
+        /** Current socket status */
         bool mConnected;
         /** Stream of controller inputs */
         std::vector<GCPadStatus> mPadBuffer;

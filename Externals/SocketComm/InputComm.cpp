@@ -5,7 +5,10 @@
 
 #include "InputComm.hpp"
 #include "Common/MsgHandler.h"
-#include "yaml-cpp/yaml.h"
+#include "lsignal.h"
+#include <json.hpp>
+
+using json = nlohmann::json;
 
 namespace SocketComm
 {
@@ -54,23 +57,19 @@ void InputComm::ReadSocket()
             try 
             {
                 std::string json_string(receiving_size, received);
-                YAML::Node json_body = YAML::Load(json_string);
-                // TODO: Update pads to use CommonTypes.h
-                // TODO: Evaluate slippi and view what parts of the struct are used.
-                // TODO:Update SI_DEVICE to poll from the buffer.
+		        auto json_body = json::parse(json_string);
                 GCPadStatus pad;
-                pad.button = json_body["button"].as<u16>();
-                pad.stickX = (u8) json_body["stickX"].as<u16>();
-                pad.stickY = (u8) json_body["stickY"].as<u16>();
-                pad.substickX = (u8) json_body["substickX"].as<u16>();
-                pad.substickY = (u8) json_body["substickY"].as<u16>();
-                pad.triggerLeft = (u8) json_body["triggerLeft"].as<u16>();
-                pad.triggerRight = (u8) json_body["triggerRight"].as<u16>();
-                pad.analogA = (u8) json_body["analogA"].as<u16>();
-                pad.analogB = (u8) json_body["analogB"].as<u16>();
-                pad.err = (u8) json_body["err"].as<int16_t>();
+                pad.button = json_body["button"].get<u16>();
+                pad.stickX = json_body["stickX"].get<u8>();
+                pad.stickY = json_body["stickY"].get<u8>();
+                pad.substickX = json_body["substickX"].get<u8>();
+                pad.substickY = json_body["substickY"].get<u8>();
+                pad.triggerLeft = json_body["triggerLeft"].get<u8>();
+                pad.triggerRight = json_body["triggerRight"].get<u8>();
+                pad.analogA = json_body["analogA"].get<u8>();
+                pad.analogB = json_body["analogB"].get<u8>();
+                pad.err = json_body["err"].get<u8>();
                 mPadBuffer.insert(mPadBuffer.begin(), pad);
-                
             } 
             catch(std::exception const& e)
             {

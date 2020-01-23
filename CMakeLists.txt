@@ -663,11 +663,13 @@ add_subdirectory(Externals/SlippiLib)
 include_directories(Externals/SlippiLib)
 
 add_definitions(-fexceptions)
-add_subdirectory(Externals/yamlcpp)
-include_directories(Externals/yamlcpp)
+#add_subdirectory(Externals/yamlcpp)
+#include_directories(Externals/yamlcpp)
+include_directories(Externals/lsignal)
+include_directories(Externals/nlohmann)
+
 add_subdirectory(Externals/SocketComm)
 include_directories(Externals/SocketComm)
-include_directories(Externals/nlohmann)
 
 if(USE_SHARED_ENET)
 	check_lib(ENET libenet enet enet/enet.h QUIET)
