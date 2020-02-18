@@ -1,20 +1,20 @@
 #include <chrono>
 #include <iostream>
+#include <fstream>
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "InputComm.hpp"
+#include "SocketComm/InputComm.hpp"
 #include "Common/MsgHandler.h"
-#include "lsignal.h"
 #include <json.hpp>
 
 using json = nlohmann::json;
 
 namespace SocketComm
 {
-InputComm::InputComm(u32 device_number, u16 port) : 
+InputComm::InputComm(u32 device_number) : 
                             mDeviceNumber(device_number),
-                            mPort(port + device_number)
+                            mPort(DEFAULT_PORT + device_number)
 {
     if(mPort)
     {
@@ -57,7 +57,7 @@ void InputComm::ReadSocket()
             try 
             {
                 std::string json_string(receiving_size, received);
-		        auto json_body = json::parse(json_string);
+		        json json_body = json::parse(json_string);
                 GCPadStatus pad;
                 pad.button = json_body["button"].get<u16>();
                 pad.stickX = json_body["stickX"].get<u8>();

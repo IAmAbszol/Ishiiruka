@@ -2,9 +2,6 @@
 // Licensed under GPLv2+
 // Refer to the license.txt file included.
 
-#include <InputComm.hpp>
-#include <iostream>
-
 #include "Core/HW/SI_Device.h"
 #include "Common/ChunkFile.h"
 #include "Common/CommonTypes.h"
@@ -22,7 +19,7 @@
 // --- standard GameCube controller ---
 CSIDevice_GCController::CSIDevice_GCController(SIDevices device, int _iDeviceNumber)
 	: ISIDevice(device, _iDeviceNumber), m_TButtonComboStart(0), m_TButtonCombo(0),
-	m_LastButtonCombo(COMBO_NONE), mInputComm(_iDeviceNumber, 55082) 
+	m_LastButtonCombo(COMBO_NONE), mInputComm(_iDeviceNumber) 
 {
 	// Dunno if we need to do this, game/lib should set it?
 	m_Mode = 0x03;

@@ -663,8 +663,6 @@ add_subdirectory(Externals/SlippiLib)
 include_directories(Externals/SlippiLib)
 
 add_definitions(-fexceptions)
-#add_subdirectory(Externals/yamlcpp)
-#include_directories(Externals/yamlcpp)
 include_directories(Externals/lsignal)
 include_directories(Externals/nlohmann)
 

@@ -13,6 +13,8 @@
 #include "Common/CommonTypes.h"
 #include "SFML/Network.hpp"
 
+#define DEFAULT_PORT 55082
+
 namespace SocketComm
 {
     class InputComm
@@ -24,7 +26,7 @@ namespace SocketComm
          * @param device_number number of the device to differentiate the base port.
          * @param port port to listen on for incoming messages.
          */
-        InputComm(uint32_t device_number, uint16_t port);
+        InputComm(uint32_t device_number);
 
         /** 
          * ~InputComm
@@ -40,6 +42,12 @@ namespace SocketComm
         bool GetUpdate(GCPadStatus &pad_status);
 
     protected:
+
+	/**
+	 * LoadConfiguration
+	 * @return true if configuration specifies specific port to read.
+	 */
+	bool LoadConfiguration();
 
         /**
          * ReadSocket

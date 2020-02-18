@@ -10,6 +10,8 @@
 #include <deque>
 #include <ctime>
 
+#include <SocketComm/OutputComm.hpp>
+
 #include "Common/CommonTypes.h"
 #include "Common/FileUtil.h"
 #include "Core/HW/EXI_Device.h"
@@ -106,6 +108,7 @@ private:
 	int32_t lastFFWFrame = INT_MIN;
 	std::vector<u8> m_read_queue;
 	Slippi::SlippiGame* m_current_game = nullptr;
+	SocketComm::OutputComm m_output_comm;
 
 protected:
 	void TransferByte(u8& byte) override;
