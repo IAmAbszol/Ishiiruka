@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <mutex>
+#include <queue>
 #include <thread>
 #include <tuple>
 
@@ -14,66 +15,66 @@
 #include "SFML/Network.hpp"
 #include <json.hpp>
 
-#define DEFAULT_PORT 55080
+#define SLIPPI_PORT 55080
+#define VIDEO_PORT 55081
+#define IP_ADDRESS "127.0.0.1"
 
 using json = nlohmann::json;
 
+// TODO: Create a better schema rather than falling into the static trap for
+//       updating the queue's.
 namespace SocketComm
 {
+    enum class OutputType
+    {
+        SLIPPI_BACKEND,
+        VIDEO_FRONTEND
+    };
+
     class OutputComm
     {
     public:
 
-        /**
-         * OutputComm
-         */
-        OutputComm();
+    /**
+     * OutputComm
+     */
+    OutputComm(OutputType m_type);
 
-        /** 
-         * ~OutputComm
-         * Deconstructor
-         */
-        ~OutputComm();
+    /** 
+     * ~OutputComm
+     * Deconstructor
+     */
+    ~OutputComm();
 
-        /** 
-         * SendUpdate
-         * @param json_message message update provided by Slippi.
-         */
-        static void SendUpdate(std::vector<u8> &json_message);
-        /**
-         * TODO: Create second function for SendUpdate to have (JSON string update, frame data);
-         * - Figure out data to Python PNG, or some type of format Python may use.
-         * 1. Each update received will be placed into a heap, sorted by time.
-         * 2. When polled, the two oldest should be grabbed. This might be swapped to newest but 
-         *    the number of items in each list will become an issue at that point. Same with old.
-         * 3. Send the pairing to output.
-         * 4. Frequency of these are equal to the input coming back through.
-         */
+    /** 
+     * SendUpdate
+     * @param json_message message update provided by Slippi.
+     */
+    void SendUpdate(std::vector<u8> &json_message);
+        
     protected:
     /**
-     * HandleClients
+     * GetTimeSinceEpoch
      */
-    void HandleClients();
+    uint64_t GetTimeSinceEpoch();
     /**
-     * UpdateClient
+     * SendMessage
+     * @param message data message to send to local socket.
+     * @return true if message sent.
      */
-    void UpdateClient();
-    
-    /** Rate at which the outputs should occur at. */
-    uint64_t tick_rate = 50;
-    /** Time difference to allow for correlation. */
-    uint64_t sync_difference = 5;
+    bool SendMessage(std::string message);
+
+    /** Port to send on, either Slippi or Video */
+    uint16_t mPort = SLIPPI_PORT;
+    /** Address to send on */
+    sf::IpAddress sending_address;
+    /** Clock */
+    std::chrono::high_resolution_clock mClock;
     /** Current socket status */
     bool mConnected;
-    /** Sending socket for the UDP outgoing updates */
+    /** Sending socket for the UDP outgoing updates. */
     sf::UdpSocket mSenderSocket;
-    /** Sending thread to house the server on */
-    std::thread mSenderThread;
-    /** Connecting clients thread **/
-    std::thread mClientsThread;
-    /** Vector of tuple'd pair (Address, Port) of clients */
-    std::vector<std::tuple<std::string, uint16_t>> mConnectedClients;
-    /** Mutex lock for accessing thread */
+    /** Mutex lock for accessing thread. */
     std::mutex mLock;
     };
 }

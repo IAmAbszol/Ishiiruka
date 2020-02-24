@@ -63,7 +63,8 @@ void appendHalfToBuffer(std::vector<u8> *buf, u16 word)
 	buf->insert(buf->end(), halfVector.begin(), halfVector.end());
 }
 
-CEXISlippi::CEXISlippi()
+CEXISlippi::CEXISlippi() :
+	m_output_comm(SocketComm::OutputType::SLIPPI_BACKEND)
 {
 	INFO_LOG(EXPANSIONINTERFACE, "EXI SLIPPI Constructor called.");
 
