@@ -279,6 +279,8 @@ void CEXISlippi::writeToFile(u8 *payload, u32 length, std::string fileOption)
 		// Close file
 		closeFile();
 	}
+	// Write out to our socket
+	m_output_comm.SendUpdate(dataToWrite);
 }
 
 void CEXISlippi::createNewFile()

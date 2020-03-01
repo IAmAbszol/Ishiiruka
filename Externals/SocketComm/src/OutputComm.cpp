@@ -50,36 +50,21 @@ uint64_t OutputComm::GetTimeSinceEpoch()
 
 void OutputComm::SendUpdate(std::vector<u8> &json_message)
 {
-    json slippi_data = json::parse(json_message.begin(), json_message.end());
-    slippi_data["received_time"] = GetTimeSinceEpoch();
-    if(!SendMessage(slippi_data.dump()))
+    if(mConnected)
     {
-        std::cout << "SendUpdate(std::vector<u8> &json_message) failed to send." << std::endl;
+        std::string data(json_message.begin(), json_message.end());
+        if(!SendMessage(data))
+        {
+            std::cout << "SendUpdate(std::vector<u8> &json_message) failed to send." << std::endl;
+        }
     }
 }
 
 bool OutputComm::SendMessage(std::string message)
 {
-    return (mSenderSocket.send(message.c_str(), sizeof(message.c_str()), sending_address, mPort) == sf::Socket::Done);
+    sf::Packet packet;
+    packet << message;
+    return (mSenderSocket.send(packet, sending_address, mPort) == sf::Socket::Done);
 }
 
-/*
-void OutputComm::UpdateClients()
-{
-    while(mConnected)
-    {
-        sf::IpAddress sending_address("127.0.0.1");
-
-        std::vector<std::uint8_t> v = {'t', 'r', 'u', 'e'};
-        json j = json::parse(v.begin(), v.end());
-        std::string data = j.dump();
-        const char * c = data.c_str();
-        if(mSenderSocket.send(c, sizeof(c), sending_address, DEFAULT_PORT) != sf::Socket::Done)
-        {
-            std::cout << "ERROR! Send to client failed!" << std::endl;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(mTickRate));
-    }
-}
-*/
 }
