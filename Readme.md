@@ -5,6 +5,40 @@ This fork serves as a repository to store changes to the Slippi dolphin client t
 
 To have everything transition smoothly, I had originally compiled the project to continually save screen shots in order to collect this data; at the time not knowing Slippi's underlying codebase was being controlled by the ASM codes provided. This README will serve as documentation on how to use Alfred and revisioning changes on what to expect in the coming months, enjoy.
 
+## Progress Table
+| Task        | Status           | Dated Last Updated |
+|:-------------|:-------------:| :-------------: |
+| Build image extractor | Complete | 03/01/2020 |
+| Extract stage, character specifics for training data | 283/1000 | 03/01/2020 |
+| Write network I/O For Dolphin      | Complete | 03/01/2020 |
+| Add function to send data image array with OutputComm | In Progress | 03/01/2020 |
+| Stress test UDP vs TCP implementation      | In Progress      | 03/01/2020 |
+| Build character selection macro | Not Started      | 03/01/2020 |
+| Write Python code to parse chunked Pre/Post frame updates | Not Started | 03/01/2020 |
+| Write Python code to parse and convert image data to PNG | Not Started | 03/01/2020 |
+| Write correlator between two sockets receiving data | Not Started | 03/01/2020 |
+| Write training model | Not Started | 03/01/2020 |
+| Translate model output to controller state | Not Started | 03/01/2020 |
+
+## Setup
+
+### Building
+Follow the instructions listed below on building for your respective Operating System. Current development resides on an Ubuntu 18.04 test stack while Dolphin is X11 forwarded to my Windows PC. 
+
+Run the build.sh script that will construct a netplay dolphin folder, this is important as the settings configured in the script allow Dolphin to write Slippi file data; thus allowing image and Slippi data to be written through the sockets. After everything is built, the Dolphin emulator will setup socket communications for the following.
+
+**Input Communication** *(Located in Externals/SocketComm/include/SocketComm/InputComm.hpp)*
+Port Range(s): **55082-55086** w.r.t Player(s)
+
+**Output Communication** *(Located in Externals/SocketComm/include/SocketComm/OutputComm.hpp)*
+Slippi Port: **55080**
+Video Port: **55081**
+
+**I/O is configured for localhost (127.0.0.1)**
+
+### Running Python
+#### Coming soon...
+
 # Dolphin - A GameCube and Wii Emulator
 
 [Homepage](https://dolphin-emu.org/) | [Project Site](https://github.com/dolphin-emu/dolphin) | [Forums](https://forums.dolphin-emu.org/) | [Wiki](https://wiki.dolphin-emu.org/) | [Issue Tracker](https://bugs.dolphin-emu.org/projects/emulator/issues) | [Coding Style](https://github.com/dolphin-emu/dolphin/blob/master/Contributing.md) | [Transifex Page](https://www.transifex.com/projects/p/dolphin-emu/)
