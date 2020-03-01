@@ -7,6 +7,9 @@ DO_CLEANUP=0
 # Set this to 1 to accept default prompts
 ACCEPT_DEFAULTS=0
 
+# This sets the default Slippi version for alfred as r18
+SLIPVER="r18"
+
 # Attempts to determine the number of cores in the CPU
 # Source: https://gist.github.com/jj1bdx/5746298
 CPUS=$(getconf _NPROCESSORS_ONLN 2>/dev/null)
@@ -92,43 +95,6 @@ fi
 echo ""
 
 # -----------------------------------------------------------------------------
-# Ask the user which version of Slippi to install. Set $COMMITHASH to some
-# commit associated with an Ishiiruka release
-
-echo "[*] Please select a version of Slippi to install (1-4):"
-echo "      1) Slippi r18"
-echo "      2) Slippi r16"
-echo "      3) Slippi r11"
-echo "      4) Slippi r10"
-echo "      *) Default: Slippi r18"
-read_input RESP 1
-case "$RESP" in
-	4)
-		COMMITHASH="50f504eb710d1b1e74356e75f8fbef310b811951"
-		SLIPVER="r10"
-		;;
-	3)
-		COMMITHASH="465957c8646fce42c590c34b7851e2657874b56e"
-		SLIPVER="r11"
-		;;
-	2)
-		COMMITHASH="6884794fdfb65cfe5ed1e8fd62f2cb5b730dff7c"
-		SLIPVER="r16"
-		;;
-	1)
-		COMMITHASH="1ef6f7bfc12e8566153054e6c964111da44f9125"
-		SLIPVER="r18"
-		;;
-
-	*)
-		COMMITHASH="1ef6f7bfc12e8566153054e6c964111da44f9125"
-		SLIPVER="r18"
-		;;
-esac
-echo "[*] User selected Slippi release $SLIPVER"
-
-
-# -----------------------------------------------------------------------------
 # Set options for targeting a particular release.
 
 # This script assumes the existence of a `$r{SLIPVER}-config.tar.gz` in the 
@@ -202,7 +168,6 @@ rm "$RECORDING_CONFIG_TAR"
 echo "[*] Cloning from $DOLPHIN_REPO ..."
 git clone "$DOLPHIN_REPO" Ishiiruka
 cd Ishiiruka
-git checkout "$COMMITHASH"
 
 # We need to make sure that users installing >r11 will SKIP THIS PATCH before
 # calling CMAKE (the fix for Soundtouch should be in-tree for r11)
