@@ -32,8 +32,9 @@ Run the build.sh script that will construct a netplay dolphin folder, this is im
 Port Range(s): **55082-55086** w.r.t Player(s)
 
 **Output Communication** *(Located in Externals/SocketComm/include/SocketComm/OutputComm.hpp)*
-Slippi Port: **55080**
-Video Port: **55081**
+- Controller Port: **55079**
+- Slippi Port: **55080**
+- Video Port: **55081**
 
 **I/O is configured for localhost (127.0.0.1)**
 
