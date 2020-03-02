@@ -37,6 +37,7 @@ enum PadButton
 	PAD_BUTTON_START = 0x1000,
 };
 
+#pragma pack(push, 1)
 struct GCPadStatus
 {
 	u16 button;       // Or-ed PAD_BUTTON_* and PAD_TRIGGER_* bits
@@ -57,3 +58,4 @@ struct GCPadStatus
 	static const u8 C_STICK_CENTER_Y = 0x80;
 	static const u8 C_STICK_RADIUS = 0x7f;
 };
+#pragma pack(pop)

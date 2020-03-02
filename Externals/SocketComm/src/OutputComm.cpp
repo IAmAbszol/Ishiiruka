@@ -16,18 +16,19 @@ namespace SocketComm
 OutputComm::OutputComm(OutputType m_type) :
     sending_address(IP_ADDRESS)
 {
-    if(m_type == OutputType::SLIPPI_BACKEND)
+    switch(m_type)
     {
-        mPort = SLIPPI_PORT;
-    }
-    else if (m_type == OutputType::VIDEO_FRONTEND)
-    {
-        mPort = VIDEO_PORT;
-    }
-    else
-    {
-        PanicAlertT("ERROR! Invalid output type selected.");
-        exit(1);
+        case OutputType::CONTROLLER_BACKEND:
+            mPort = CONTROLLER_PORT;
+            break;
+        
+        case OutputType::SLIPPI_BACKEND:
+            mPort = SLIPPI_PORT;
+            break;
+
+        case OutputType::VIDEO_FRONTEND:
+            mPort = VIDEO_PORT;
+            break;
     }
     mSenderSocket.setBlocking(false);
     mConnected = true;
@@ -52,18 +53,29 @@ void OutputComm::SendUpdate(std::vector<u8> &json_message)
 {
     if(mConnected)
     {
+        sf::Packet packet;
+        // TODO: Make this more stream lined
         std::string data(json_message.begin(), json_message.end());
-        if(!SendMessage(data))
+        packet << data;
+        if(!SendMessage(packet))
         {
             std::cout << "SendUpdate(std::vector<u8> &json_message) failed to send." << std::endl;
         }
     }
 }
 
-bool OutputComm::SendMessage(std::string message)
+void OutputComm::SendUpdate(GCPadStatus &pad_status)
 {
     sf::Packet packet;
-    packet << message;
+    packet.append(&pad_status, sizeof(pad_status));
+    if(!SendMessage(packet))
+    {
+        std::cout << "SendUpdate(GCPadStatus &pad_status) failed to send." << std::endl;
+    }
+}
+
+bool OutputComm::SendMessage(sf::Packet &packet)
+{
     return (mSenderSocket.send(packet, sending_address, mPort) == sf::Socket::Done);
 }
 

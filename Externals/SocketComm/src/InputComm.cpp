@@ -13,6 +13,7 @@ using json = nlohmann::json;
 namespace SocketComm
 {
 InputComm::InputComm(u32 device_number) : 
+                            mOutputComm(OutputType::CONTROLLER_BACKEND),
                             mDeviceNumber(device_number),
                             mPort(DEFAULT_PORT + device_number)
 {
@@ -83,6 +84,7 @@ void InputComm::ReadSocket()
 bool InputComm::GetUpdate(GCPadStatus &pad_status)
 {
     std::lock_guard<std::mutex> lock(mLock);
+    mOutputComm.SendUpdate(pad_status);
     if(mPadBuffer.size() > 0)
     {
         pad_status = mPadBuffer.back();

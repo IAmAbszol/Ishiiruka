@@ -12,9 +12,11 @@
 #include <tuple>
 
 #include "Common/CommonTypes.h"
+#include "InputCommon/GCPadStatus.h"
 #include "SFML/Network.hpp"
 #include <json.hpp>
 
+#define CONTROLLER_PORT 55079
 #define SLIPPI_PORT 55080
 #define VIDEO_PORT 55081
 #define IP_ADDRESS "127.0.0.1"
@@ -27,6 +29,7 @@ namespace SocketComm
 {
     enum class OutputType
     {
+        CONTROLLER_BACKEND,
         SLIPPI_BACKEND,
         VIDEO_FRONTEND
     };
@@ -51,6 +54,12 @@ namespace SocketComm
      * @param json_message message update provided by Slippi.
      */
     void SendUpdate(std::vector<u8> &json_message);
+
+    /**
+     * SendUpdate
+     * @param pad_status gamecube pad status struct
+     */
+    void SendUpdate(GCPadStatus &pad_status);
         
     protected:
     /**
@@ -59,10 +68,10 @@ namespace SocketComm
     uint64_t GetTimeSinceEpoch();
     /**
      * SendMessage
-     * @param message data message to send to local socket.
+     * @param packet data message to send to local socket.
      * @return true if message sent.
      */
-    bool SendMessage(std::string message);
+    bool SendMessage(sf::Packet &packet);
 
     /** Port to send on, either Slippi or Video */
     uint16_t mPort = SLIPPI_PORT;
