@@ -32,6 +32,8 @@
 #include "VideoCommon/VideoBackendBase.h"
 #include "VideoCommon/VideoCommon.h"
 
+#include "SocketComm/OutputComm.hpp"
+
 class PostProcessor;
 
 struct EfbPokeData
@@ -209,6 +211,7 @@ private:
 	Common::Flag m_frame_dump_thread_running;
 	u32 m_frame_dump_image_counter = 0;
 	bool m_frame_dump_frame_running = false;
+	SocketComm::OutputComm m_output_comm;
 
 	struct FrameDumpConfig
 	{

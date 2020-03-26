@@ -13,6 +13,7 @@ using json = nlohmann::json;
 
 namespace SocketComm
 {
+    
 OutputComm::OutputComm(OutputType m_type) :
     sending_address(IP_ADDRESS)
 {
@@ -47,6 +48,20 @@ uint64_t OutputComm::GetTimeSinceEpoch()
 {
     return std::chrono::duration_cast<std::chrono::microseconds>(
         mClock.now().time_since_epoch()).count();
+}
+
+const bool OutputComm::IsConnected() const
+{
+    return mConnected;
+}
+
+void OutputComm::SendUpdate(const u8* data, int row_stride, int width,
+	int height, bool saveAlpha, bool frombgra)
+{
+    if(mConnected)
+    {
+        
+    }
 }
 
 void OutputComm::SendUpdate(std::vector<u8> &json_message)

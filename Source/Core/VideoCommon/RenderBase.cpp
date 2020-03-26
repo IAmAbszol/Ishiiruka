@@ -86,7 +86,8 @@ static float AspectToWidescreen(float aspect)
 	return aspect * ((16.0f / 9.0f) / (4.0f / 3.0f));
 }
 
-Renderer::Renderer()
+Renderer::Renderer() :
+	m_output_comm(SocketComm::OutputType::VIDEO_FRONTEND)
 {
 	OSDChoice = 0;
 	OSDTime = 0;
@@ -874,7 +875,7 @@ void Renderer::Swap(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const 
 
 bool Renderer::IsFrameDumping()
 {
-	if (m_screenshot_request.IsSet())
+	if (m_screenshot_request.IsSet() || m_output_comm.IsConnected())
 		return true;
 
 #if defined(HAVE_LIBAV) || defined(_WIN32)
@@ -953,8 +954,15 @@ void Renderer::RunFrameDumps()
 			config.stride = -config.stride;
 		}
 
+		// Write to socket
+		if (m_output_comm.IsConnected())
+		{
+			m_output_comm.SendUpdate(config.data, config.stride, config.width, config.height,
+				false, false);
+		}
+
 		// Save screenshot
-		if (m_screenshot_request.TestAndClear())
+		if (m_screenshot_request.TestAndClear() && m_screenshot_request.IsSet())
 		{
 			std::lock_guard<std::mutex> lk(m_screenshot_lock);
 

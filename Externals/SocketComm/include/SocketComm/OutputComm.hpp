@@ -37,7 +37,6 @@ namespace SocketComm
     class OutputComm
     {
     public:
-
     /**
      * OutputComm
      */
@@ -48,6 +47,19 @@ namespace SocketComm
      * Deconstructor
      */
     ~OutputComm();
+
+    /**
+     * IsConnected
+     * @return true if connected
+     */
+    const bool IsConnected() const;
+
+    /**
+     * SendUpdate
+     * @copydoc TextureToPng
+     */
+    void SendUpdate(const u8* data, int row_stride, int width,
+	int height, bool saveAlpha, bool frombgra);
 
     /** 
      * SendUpdate
