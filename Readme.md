@@ -15,6 +15,7 @@ To have everything transition smoothly, I had originally compiled the project to
 | Add function to send data image array with OutputComm | In Progress | 03/01/2020 |
 | Add function to send controller state with OutputComm | Complete | 03/01/2020 |
 | Stress test UDP vs TCP implementation      | In Progress      | 03/01/2020 |
+| Update CMake files      | Not Started      | 04/18/2020 |
 | Build character selection macro | Not Started      | 03/01/2020 |
 | Write Python code to parse chunked Pre/Post frame updates | Not Started | 03/01/2020 |
 | Write Python code to parse and convert image data to PNG | Not Started | 03/01/2020 |
