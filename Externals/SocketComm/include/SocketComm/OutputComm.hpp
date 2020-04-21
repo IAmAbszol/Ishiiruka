@@ -17,11 +17,6 @@
 #include "InputCommon/GCPadStatus.h"
 #include "SFML/Network.hpp"
 
-#define CONTROLLER_PORT 55079
-#define SLIPPI_PORT 55080
-#define VIDEO_PORT 55081
-#define IP_ADDRESS "127.0.0.1"
-
 using json = nlohmann::json;
 
 // TODO: Create a better schema rather than falling into the static trap for
@@ -35,9 +30,17 @@ namespace SocketComm
 		VIDEO_FRONTEND
 	};
 
+	/** Designated ports per interface. */
+	static const uint16_t 		CONTROLLER_PORT 	= 55079;
+	static const uint16_t 		SLIPPI_PORT 		= 55080;
+	static const uint16_t 		VIDEO_PORT 			= 55081;
+	/** Defaulted IP address for this client. */
+	static const std::string 	IP_ADDRESS 			= "127.0.0.1";
+
 	class OutputComm
 	{
 	public:
+
 		/**
 		 * OutputComm
 		 */

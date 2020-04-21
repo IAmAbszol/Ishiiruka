@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <mutex>
 #include <thread>
 
@@ -14,10 +15,12 @@
 #include "Common/CommonTypes.h"
 #include "SFML/Network.hpp"
 
-#define DEFAULT_PORT 55082
-
 namespace SocketComm
 {
+
+    /** Starting port number of player one data out. */
+    const static uint16_t DEFAULT_PORT = 55082;
+    
     class InputComm
     {
     public:
