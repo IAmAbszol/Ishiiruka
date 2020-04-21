@@ -181,6 +181,7 @@ public:
     Packet& operator >>(Uint16&       data);
     Packet& operator >>(Int32&        data);
     Packet& operator >>(Uint32&       data);
+	Packet& operator >>(Uint64&       data);
     Packet& operator >>(float&        data);
     Packet& operator >>(double&       data);
     Packet& operator >>(char*         data);
@@ -200,6 +201,7 @@ public:
     Packet& operator <<(Uint16              data);
     Packet& operator <<(Int32               data);
     Packet& operator <<(Uint32              data);
+	Packet& operator <<(Uint64              data);
     Packet& operator <<(float               data);
     Packet& operator <<(double              data);
     Packet& operator <<(const char*         data);

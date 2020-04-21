@@ -133,7 +133,6 @@ bool DolphinApp::OnInit()
 	else
 		SConfig::GetInstance().m_strSlippiInput = "Slippi/playback.txt";
 
-
 	if (m_select_audio_emulation)
 		SConfig::GetInstance().bDSPHLE = (m_audio_emulation_name.Upper() == "HLE");
 

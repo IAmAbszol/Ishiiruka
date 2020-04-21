@@ -77,14 +77,14 @@ void InputComm::ReadSocket()
                 std::cout << e.what() << std::endl;
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
 bool InputComm::GetUpdate(GCPadStatus &pad_status)
 {
     std::lock_guard<std::mutex> lock(mLock);
-    mOutputComm.SendUpdate(pad_status);
+    mOutputComm.SendUpdate(mDeviceNumber, pad_status);
     if(mPadBuffer.size() > 0)
     {
         pad_status = mPadBuffer.back();

@@ -875,7 +875,7 @@ void Renderer::Swap(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const 
 
 bool Renderer::IsFrameDumping()
 {
-	if (m_screenshot_request.IsSet() || m_output_comm.IsConnected())
+	if (m_screenshot_request.IsSet() || m_output_comm.IsConnected() || SConfig::GetInstance().m_DumpFrames)
 		return true;
 
 #if defined(HAVE_LIBAV) || defined(_WIN32)
@@ -954,14 +954,6 @@ void Renderer::RunFrameDumps()
 			config.stride = -config.stride;
 		}
 
-		// Write to socket
-		if (m_output_comm.IsConnected())
-		{
-			m_output_comm.SendUpdate(config.data, config.stride, config.width, config.height,
-				false, false);
-		}
-
-		// Save screenshot
 		if (m_screenshot_request.TestAndClear() && m_screenshot_request.IsSet())
 		{
 			std::lock_guard<std::mutex> lk(m_screenshot_lock);
@@ -974,7 +966,12 @@ void Renderer::RunFrameDumps()
 			m_screenshot_name.clear();
 			m_screenshot_completed.Set();
 		}
-
+		// Write to socket
+		if (m_output_comm.IsConnected())
+		{
+			m_output_comm.SendUpdate(config.data, config.stride, config.width, config.height, false, false);
+		}
+		
 		if (SConfig::GetInstance().m_DumpFrames)
 		{
 			if (!frame_dump_started)

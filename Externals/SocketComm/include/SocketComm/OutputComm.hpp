@@ -6,7 +6,9 @@
 #pragma once
 
 #include <cstdint>
+#include <json.hpp>
 #include <mutex>
+#include <png.h>
 #include <queue>
 #include <thread>
 #include <tuple>
@@ -14,7 +16,6 @@
 #include "Common/CommonTypes.h"
 #include "InputCommon/GCPadStatus.h"
 #include "SFML/Network.hpp"
-#include <json.hpp>
 
 #define CONTROLLER_PORT 55079
 #define SLIPPI_PORT 55080
@@ -27,75 +28,121 @@ using json = nlohmann::json;
 //       updating the queue's.
 namespace SocketComm
 {
-    enum class OutputType
-    {
-        CONTROLLER_BACKEND,
-        SLIPPI_BACKEND,
-        VIDEO_FRONTEND
-    };
+	enum class OutputType
+	{
+		CONTROLLER_BACKEND,
+		SLIPPI_BACKEND,
+		VIDEO_FRONTEND
+	};
 
-    class OutputComm
-    {
-    public:
-    /**
-     * OutputComm
-     */
-    OutputComm(OutputType m_type);
+	class OutputComm
+	{
+	public:
+		/**
+		 * OutputComm
+		 */
+		OutputComm(OutputType m_type);
 
-    /** 
-     * ~OutputComm
-     * Deconstructor
-     */
-    ~OutputComm();
+		/**
+		 * ~OutputComm
+		 * Deconstructor
+		 */
+		~OutputComm();
 
-    /**
-     * IsConnected
-     * @return true if connected
-     */
-    const bool IsConnected() const;
+		/**
+		 * IsConnected
+		 * @return true if connected
+		 */
+		const bool IsConnected() const;
 
-    /**
-     * SendUpdate
-     * @copydoc TextureToPng
-     */
-    void SendUpdate(const u8* data, int row_stride, int width,
-	int height, bool saveAlpha, bool frombgra);
+		/**
+		  * HandleConnect
+		  **/
+		void HandleConnect();
 
-    /** 
-     * SendUpdate
-     * @param json_message message update provided by Slippi.
-     */
-    void SendUpdate(std::vector<u8> &json_message);
+		/**
+		 * SendUpdate
+		 * @copydoc TextureToPng
+		 */
+		void SendUpdate(const u8* data, int row_stride, int width,
+			int height, bool saveAlpha, bool frombgra);
 
-    /**
-     * SendUpdate
-     * @param pad_status gamecube pad status struct
-     */
-    void SendUpdate(GCPadStatus &pad_status);
-        
-    protected:
-    /**
-     * GetTimeSinceEpoch
-     */
-    uint64_t GetTimeSinceEpoch();
-    /**
-     * SendMessage
-     * @param packet data message to send to local socket.
-     * @return true if message sent.
-     */
-    bool SendMessage(sf::Packet &packet);
+		/**
+		 * SendUpdate
+		 * @param json_message message update provided by Slippi.
+		 */
+		void SendUpdate(std::vector<u8> &json_message);
 
-    /** Port to send on, either Slippi or Video */
-    uint16_t mPort = SLIPPI_PORT;
-    /** Address to send on */
-    sf::IpAddress sending_address;
-    /** Clock */
-    std::chrono::high_resolution_clock mClock;
-    /** Current socket status */
-    bool mConnected;
-    /** Sending socket for the UDP outgoing updates. */
-    sf::UdpSocket mSenderSocket;
-    /** Mutex lock for accessing thread. */
-    std::mutex mLock;
-    };
+		/**
+		 * SendUpdate
+		 * @param pad_status gamecube pad status struct
+		 */
+		void SendUpdate(u32 m_device_number, GCPadStatus &pad_status);
+
+	protected:
+		/**
+		 * TPngDestructor
+		 */
+		struct TPngDestructor {
+			png_struct *p;
+			TPngDestructor(png_struct *p) : p(p) {}
+			~TPngDestructor() { if (p) { png_destroy_write_struct(&p, NULL); } }
+		};
+		/**
+		 * GetTimeSinceEpoch
+		 */
+		uint64_t GetTimeSinceEpoch();
+		/**
+		 * PngWriteCallback
+		 * @param png_ptr pointer to the png struct
+		 * @param png_bytep pixel data
+		 * @param png_size_t length of data
+		 */
+		static void PngWriteCallback(png_structp png_ptr, png_bytep data, png_size_t length);
+		/**
+		 * WritePngToMemory
+		 * @param w width of image
+		 * @param h height of image
+		 * @param dataRGBA raw image data
+		 * @param out uint8_t vector
+		 */
+		void WritePngToMemory(size_t w, size_t h, const uint8_t *dataRGBA, std::vector<uint8_t> out);
+		/**
+		 * SendTcpMessage
+		 * @param packet data message to send to local socket.
+		 * @return sf::SocketStatus enum value.
+		 */
+		int SendTcpMessage(sf::Packet &packet);
+		/**
+		 * SendUpdMessage
+		 * @param packet data message to send to local socket.
+		 * @return sf::SocketStatus enum value.
+		 */
+		int SendUpdMessage(sf::Packet &packet);
+
+		/** Number of rows to send per segment */
+		uint16_t mRowSize = 480; // mRowSize * 556 * 4
+		/** Number of frames that have passed */
+		uint32_t mFrameCount = 0;
+		/** Port to send on, either Slippi or Video */
+		uint16_t mPort = SLIPPI_PORT;
+		/** Address to send on */
+		sf::IpAddress sending_address;
+		/** Clock */
+		std::chrono::high_resolution_clock mClock;
+		/** Current socket status */
+		bool mConnected = false;
+		/** Handle socket connection status */
+		bool mHandleConnections = true;
+		/** Sending socket for the UDP out going updates. */
+		sf::UdpSocket mUdpSocket;
+		/** Sending socket for the TCP out going updates. */
+		sf::TcpListener mListenerSocket;
+		/** Sending socket for the TCP out going updates. */
+		sf::TcpSocket mClientSocket;
+		/** Tcp listening socket thread, rip boost post. */
+		std::thread mHandleConnectThread;
+		/** Mutex lock for accessing thread. */
+		std::mutex mLock;
+	};
 }

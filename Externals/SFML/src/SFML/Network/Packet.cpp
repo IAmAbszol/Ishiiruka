@@ -189,6 +189,19 @@ Packet& Packet::operator >>(Uint32& data)
 
 
 ////////////////////////////////////////////////////////////
+Packet& Packet::operator >>(Uint64& data)
+{
+	if (checkSize(sizeof(data)))
+	{
+		data = ntohl(*reinterpret_cast<const Uint64*>(&m_data[m_readPos]));
+		m_readPos += sizeof(data);
+	}
+
+	return *this;
+}
+
+
+////////////////////////////////////////////////////////////
 Packet& Packet::operator >>(float& data)
 {
     if (checkSize(sizeof(data)))
@@ -382,6 +395,15 @@ Packet& Packet::operator <<(Uint32 data)
     Uint32 toWrite = htonl(data);
     append(&toWrite, sizeof(toWrite));
     return *this;
+}
+
+
+////////////////////////////////////////////////////////////
+Packet& Packet::operator <<(Uint64 data)
+{
+	Uint64 toWrite = htonl(data);
+	append(&toWrite, sizeof(toWrite));
+	return *this;
 }
 
 

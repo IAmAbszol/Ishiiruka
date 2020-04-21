@@ -111,6 +111,7 @@ bool TextureToPng(const u8* data, int row_stride, const std::string& filename, i
 		// The old API uses u8* instead of const u8*. It doesn't write
 		// to this pointer, but to fit the API, we have to drop the const qualifier.
 		png_write_row(png_ptr, const_cast<u8*>(row_ptr));
+
 	}
 
 	// End write

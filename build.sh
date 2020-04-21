@@ -215,7 +215,11 @@ if [ "$SLIPVER" != "r10" ]; then
 	# Write the playback configuration to the folder
 	cp -R Binaries/Sys playback/
 	cp -R Binaries/User playback/
+
+	# Update the config file to enable frame dumping for playback
+	#sed -i '/DumpFramesAsImages/ s/False/True/' 
 fi
+
 
 if [ "$DO_CLEANUP" -eq 1 ]; then
 	rm -rf ./Ishiiruka

@@ -159,8 +159,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Software", "Core\VideoBacke
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glslang", "..\Externals\glslang\glslang.vcxproj", "{D178061B-84D3-44F9-BEED-EFD18D9033F0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Vulkan", "Core\VideoBackends\Vulkan\Vulkan.vcxproj", "{29F29A19-F141-45AD-9679-5A2923B49DA3}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SlippiLib", "..\Externals\SlippiLib\SlippiLib.vcxproj", "{FF39260B-839A-4A6C-A117-CAA73C1683F5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cubeb", "..\Externals\cubeb\msvc\cubeb.vcxproj", "{8EA11166-6512-44FC-B7A5-A4D1ECC81170}"
