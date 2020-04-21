@@ -10,7 +10,7 @@ To have everything transition smoothly, I had originally compiled the project to
 |:-------------|:-------------:| :-------------: |
 | Build image extractor | Complete | 03/01/2020 |
 | Extract stage, character specifics for training data | Complete | 04/21/2020 |
-| Add argument for image extraction | In Progress | 03/02/2020 |
+| Add argument for image extraction | Discarded | 04/21/2020 |
 | Write network I/O For Dolphin      | Complete | 03/01/2020 |
 | Add function to send data image array with OutputComm | In Progress | 03/01/2020 |
 | Add function to send controller state with OutputComm | Complete | 03/01/2020 |
