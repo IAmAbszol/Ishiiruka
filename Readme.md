@@ -9,15 +9,17 @@ To have everything transition smoothly, I had originally compiled the project to
 | Task        | Status           | Dated Last Updated |
 |:-------------|:-------------:| :-------------: |
 | Build image extractor | Complete | 03/01/2020 |
-| Extract stage, character specifics for training data | 283/1000 | 03/01/2020 |
-| Add argument for image extraction | In Progress | 03/02/2020 |
+| Extract stage, character specifics for training data | Complete | 04/21/2020 |
+| Add argument for image extraction | Discarded | 04/21/2020 |
 | Write network I/O For Dolphin      | Complete | 03/01/2020 |
 | Add function to send data image array with OutputComm | In Progress | 03/01/2020 |
 | Add function to send controller state with OutputComm | Complete | 03/01/2020 |
-| Stress test UDP vs TCP implementation      | In Progress      | 03/01/2020 |
+| Stress test UDP vs TCP implementation      | Complete      | 04/21/2020 |
+| Update CMake files      | Discarded      | 04/18/2020 |
+| Docker Dolphin Container w/ X11 | In Progress | 04/21/2020 |
 | Build character selection macro | Not Started      | 03/01/2020 |
-| Write Python code to parse chunked Pre/Post frame updates | Not Started | 03/01/2020 |
-| Write Python code to parse and convert image data to PNG | Not Started | 03/01/2020 |
+| Write Python code to parse chunked Pre/Post frame updates | In Progress | 04/21/2020 |
+| Write Python code to parse and convert image data to PNG | In Progress | 04/21/2020 |
 | Write correlator between two sockets receiving data | Not Started | 03/01/2020 |
 | Write training model | Not Started | 03/01/2020 |
 | Translate model output to controller state | Not Started | 03/01/2020 |
