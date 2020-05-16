@@ -12,7 +12,7 @@ To have everything transition smoothly, I had originally compiled the project to
 | Extract stage, character specifics for training data | Complete | 04/21/2020 |
 | Add argument for image extraction | Discarded | 04/21/2020 |
 | Write network I/O For Dolphin      | Complete | 03/01/2020 |
-| Add function to send data image array with OutputComm | In Progress | 03/01/2020 |
+| Add function to send data image array with OutputComm | Complete | 05/15/2020 |
 | Add function to send controller state with OutputComm | Complete | 03/01/2020 |
 | Stress test UDP vs TCP implementation      | Complete      | 04/21/2020 |
 | Update CMake files      | Discarded      | 04/18/2020 |
