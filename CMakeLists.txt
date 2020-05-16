@@ -746,6 +746,11 @@ else()
 	set(PNG png)
 endif()
 
+# Always use libjpeg from Externals
+message("Using static libjpeg from Externals.")
+add_subdirectory(${CMAKE_SOURCE_DIR}/Externals/jpeg-8)
+include_directories(${CMAKE_SOURCE_DIR}/Externals/jpeg-8)
+
 # Always use soundtouch from Externals
 message("Using static soundtouch from Externals")
 add_subdirectory(Externals/soundtouch)

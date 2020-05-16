@@ -5,4 +5,5 @@ add_library(SocketComm STATIC ${SRC_SOCKET})
 target_include_directories(SocketComm PUBLIC include/)
 target_link_libraries(SocketComm sfml-network
                                  sfml-system
-				 png)
+                                 jpeglib
+                                 png)

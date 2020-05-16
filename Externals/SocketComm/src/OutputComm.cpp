@@ -8,7 +8,6 @@
 
 #include "Common/MsgHandler.h"
 #include "Core/ConfigManager.h"
-#include <json.hpp>
 
 using json = nlohmann::json;
 
@@ -33,13 +32,19 @@ namespace SocketComm
 			break;
 
 		case OutputType::VIDEO_FRONTEND:
-			mPort = VIDEO_PORT;
-			if (mListenerSocket.listen(mPort) != sf::Socket::Done)
+			if(mSegments > 1)
 			{
-				std::cout << "OutputComm(OutputType m_type) video initialization failed to listen on designated port." << std::endl;
+				std::cout << "WARNING! mSegments > 1 causes the jpeg reconstruction to fail. Still not 100% why but buffer out == buffer in. Wack" << std::endl;
 			}
-			mListenerSocket.setBlocking(false);
-			mHandleConnectThread = std::thread(&OutputComm::HandleConnect, this);
+			mPort = VIDEO_PORT;
+			//if (mListenerSocket.listen(mPort) != sf::Socket::Done)
+			//{
+			//	std::cout << "OutputComm(OutputType m_type) video initialization failed to listen on designated port." << std::endl;
+			//}
+			//mListenerSocket.setBlocking(false);
+			//mHandleConnectThread = std::thread(&OutputComm::HandleConnect, this);
+			mUdpSocket.setBlocking(false);
+			mConnected = true;
 			break;
 		}
 	}
@@ -79,11 +84,8 @@ namespace SocketComm
 				sf::Socket::Status send_status;
 				if ((send_status = mListenerSocket.accept(mClientSocket)) == sf::Socket::Done)
 				{
-					#ifdef _WIN32
-						mClientSocket.setBlocking(true);
-					#else
-						mClientSocket.setBlocking(true);
-					#endif
+					
+					mClientSocket.setBlocking(true);
 					mConnected = true;
 				}
 				else if (send_status == sf::Socket::Error)
@@ -95,93 +97,93 @@ namespace SocketComm
 		}
 	}
 
-	void OutputComm::PngWriteCallback(png_structp  png_ptr, png_bytep data, png_size_t length) {
-		auto p = (std::vector<uint8_t>*)png_get_io_ptr(png_ptr);
-		p->insert(p->end(), data, data + length);
-	}
-
-	void OutputComm::WritePngToMemory(size_t width, size_t height, const uint8_t *dataRGBA, std::vector<uint8_t> out) {
-		png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-		TPngDestructor destroyPng(png_ptr);
-		png_infop info_ptr = png_create_info_struct(png_ptr);
-		png_set_IHDR(png_ptr, info_ptr, width, height, 8,
-			PNG_COLOR_TYPE_RGBA,
-			PNG_INTERLACE_NONE,
-			PNG_COMPRESSION_TYPE_DEFAULT,
-			PNG_FILTER_TYPE_DEFAULT);
-		std::vector<uint8_t*> rows(height);
-		for (size_t y = 0; y < height; ++y)
-			rows[y] = (uint8_t*)dataRGBA + y * width * 4;
-		png_set_rows(png_ptr, info_ptr, &rows[0]);
-		png_set_compression_level(png_ptr, 6);
-		png_set_write_fn(png_ptr, &out, PngWriteCallback, NULL);
-		png_set_rgb_to_gray_fixed(png_ptr, 3,-1,-1);
-		png_read_update_info(png_ptr, info_ptr);
-		png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
-	}
-
 	void OutputComm::SendUpdate(const u8* data, int row_stride, int width,
 		int height, bool saveAlpha, bool frombgra)
 	{
 		if (mConnected)
 		{
-
+			// Data
 			sf::Packet data_packet;
 			std::vector<u8> buffer;
-			uint8_t segment_index = 0;
-			if (!saveAlpha)
-				buffer.resize(width * 4);
+			u8 *jpeg_buffer;
+			JSAMPROW jpeg_row_pointer[1];
+			
+			// Setup the buffer to be written to
+			jpeg_compress_struct jpeg_cinfo;
+			jpeg_error_mgr jerr;
+			jpeg_cinfo.err = jpeg_std_error(&jerr);
+			jerr.trace_level = 10;
+			jpeg_create_compress(&jpeg_cinfo);
+			uint64_t outbuffer_size = 0;
+			jpeg_mem_dest(&jpeg_cinfo, &jpeg_buffer, &outbuffer_size);
 
-			// TODO: Clean this up
-			// Write image data, right from ImageWrite.cpp
+			// Setup the struct info
+			jpeg_cinfo.image_width = width;
+			jpeg_cinfo.image_height = height;
+			jpeg_cinfo.input_components = 3;
+			jpeg_cinfo.in_color_space = JCS_RGB;
+			jpeg_set_defaults(&jpeg_cinfo);
+			jpeg_set_quality(&jpeg_cinfo, JPEG_QUALITY, true);
+			jpeg_start_compress(&jpeg_cinfo, false);
+
+			buffer.resize(width * 3);
+
 			for (auto y = 0; y < height; ++y)
 			{
-				if (y % mRowSize == 0 || (y + 1) >= height)
-				{
-					if (y != 0)
-					{
-						if (SendTcpMessage(data_packet) != sf::Socket::Done)
-						{
-							std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool frombgra) failed to send." << std::endl;
-						}
-						segment_index++;
-					}
-					/*
-					data_packet.clear();
-					data_packet << mFrameCount;
-					data_packet << segment_index;
-					data_packet << mRowSize;
-					data_packet << width;
-					data_packet << height;
-					data_packet << saveAlpha;
-					data_packet << frombgra;
-					data_packet << (sf::Uint64) GetTimeSinceEpoch();
-					*/
-				}
-
 				const u8* row_ptr = data + y * row_stride;
+				// TODO : Always ensure RGB is used
 				if (!saveAlpha || frombgra)
 				{
 					int src_r = frombgra ? 2 : 0;
 					int src_b = frombgra ? 0 : 2;
 					for (int x = 0; x < width; x++)
 					{
-						buffer[4 * x + 0] = row_ptr[4 * x + src_r];
-						buffer[4 * x + 1] = row_ptr[4 * x + 1];
-						buffer[4 * x + 2] = row_ptr[4 * x + src_b];
-						buffer[4 * x + 3] = saveAlpha ? row_ptr[4 * x + 3] : 0xff;
+						buffer[3 * x + 0] = row_ptr[4 * x + src_r];
+						buffer[3 * x + 1] = row_ptr[4 * x + 1];
+						buffer[3 * x + 2] = row_ptr[4 * x + src_b];
 					}
 					row_ptr = buffer.data();
 				}
-				for (int x = 0; x < width * 4; x++)
+				if(jpeg_cinfo.next_scanline >= jpeg_cinfo.image_height)
 				{
-					data_packet.append(&row_ptr[x], sizeof(u8));
+					std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool frombgra) JPEG Conversion Error, height out of bounds." << std::endl;
+					return;
 				}
+				jpeg_row_pointer[0] = (uint8_t *) buffer.data();
+				jpeg_write_scanlines(&jpeg_cinfo, jpeg_row_pointer, 1);
 			}
-			std::vector<uint8_t> out;
-			WritePngToMemory(width, height, const_cast<uint8_t *>(&buffer[0]), out);
-			data_packet.append(&out[0], sizeof(out.size()));
+			jpeg_finish_compress(&jpeg_cinfo);
+			jpeg_destroy_compress(&jpeg_cinfo);
+
+			uint8_t m_current_pos = 0;
+			uint32_t block_size = outbuffer_size / mSegments;
+			// WARNING! mSegments > 1 causes the jpeg reconstruction to fail. Still not 100% why but buffer out == buffer in. Wack.
+			for(uint8_t segment = 0; segment < mSegments; segment++)
+			{
+				if((m_current_pos + block_size) > outbuffer_size)
+				{
+					block_size -= ((m_current_pos + block_size) - outbuffer_size);
+				}
+				// Total header bytes = 35
+				data_packet.clear();
+				data_packet << mFrameCount;
+				data_packet << segment;
+				data_packet << mSegments;
+				data_packet << block_size;
+				data_packet << width;
+				data_packet << height;
+				data_packet << (sf::Uint64) outbuffer_size;
+				data_packet << (sf::Uint64) GetTimeSinceEpoch();
+				data_packet.append(reinterpret_cast<const char*>(&jpeg_buffer[m_current_pos]), block_size);
+				if (SendUdpMessage(data_packet) != sf::Socket::Done)
+				{
+					std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool frombgra) failed to send." << std::endl;
+				}
+				
+				m_current_pos += block_size;
+			}
 		}
+		
         if (mFrameCount >= std::numeric_limits<uint32_t>::max())
         {
             mFrameCount = 0;
@@ -200,7 +202,7 @@ namespace SocketComm
 			// TODO: Make this more stream lined
 			std::string data(json_message.begin(), json_message.end());
 			packet << data;
-			if (SendUpdMessage(packet) != sf::Socket::Done)
+			if (SendUdpMessage(packet) != sf::Socket::Done)
 			{
 				std::cout << "SendUpdate(std::vector<u8> &json_message) failed to send." << std::endl;
 			}
@@ -214,9 +216,13 @@ namespace SocketComm
 			sf::Packet packet;
 			packet.append(&m_device_number, sizeof(m_device_number));
 			packet.append(&pad_status, sizeof(pad_status));
-			if (SendUpdMessage(packet) != sf::Socket::Done)
+			if (SendUdpMessage(packet) != sf::Socket::Done)
 			{
 				std::cout << "SendUpdate(32 m_device_number, GCPadStatus &pad_status) failed to send." << std::endl;
+			}
+			else
+			{
+									std::cout << "Sent to " << sending_address.toString() << " Port " << mPort << std::endl;
 			}
 		}
 	}
@@ -232,7 +238,7 @@ namespace SocketComm
 		return send_status;
 	}
 
-	int OutputComm::SendUpdMessage(sf::Packet &packet)
+	int OutputComm::SendUdpMessage(sf::Packet &packet)
 	{
 		return mUdpSocket.send(packet, sending_address, mPort);
 	}

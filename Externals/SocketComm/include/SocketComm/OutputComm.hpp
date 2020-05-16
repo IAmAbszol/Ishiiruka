@@ -6,9 +6,9 @@
 #pragma once
 
 #include <cstdint>
+#include <jpeglib.h>
 #include <json.hpp>
 #include <mutex>
-#include <png.h>
 #include <queue>
 #include <thread>
 #include <tuple>
@@ -35,7 +35,9 @@ namespace SocketComm
 	static const uint16_t 		SLIPPI_PORT 		= 55080;
 	static const uint16_t 		VIDEO_PORT 			= 55081;
 	/** Defaulted IP address for this client. */
-	static const std::string 	IP_ADDRESS 			= "127.0.0.1";
+	static const std::string 	IP_ADDRESS 			= "192.168.1.2";
+	/** JPEG image quality being sent over (100 = 215KB, 25 = 31KB). */
+	static const uint8_t		JPEG_QUALITY	= 25;
 
 	class OutputComm
 	{
@@ -84,32 +86,9 @@ namespace SocketComm
 
 	protected:
 		/**
-		 * TPngDestructor
-		 */
-		struct TPngDestructor {
-			png_struct *p;
-			TPngDestructor(png_struct *p) : p(p) {}
-			~TPngDestructor() { if (p) { png_destroy_write_struct(&p, NULL); } }
-		};
-		/**
 		 * GetTimeSinceEpoch
 		 */
 		uint64_t GetTimeSinceEpoch();
-		/**
-		 * PngWriteCallback
-		 * @param png_ptr pointer to the png struct
-		 * @param png_bytep pixel data
-		 * @param png_size_t length of data
-		 */
-		static void PngWriteCallback(png_structp png_ptr, png_bytep data, png_size_t length);
-		/**
-		 * WritePngToMemory
-		 * @param w width of image
-		 * @param h height of image
-		 * @param dataRGBA raw image data
-		 * @param out uint8_t vector
-		 */
-		void WritePngToMemory(size_t w, size_t h, const uint8_t *dataRGBA, std::vector<uint8_t> out);
 		/**
 		 * SendTcpMessage
 		 * @param packet data message to send to local socket.
@@ -117,14 +96,14 @@ namespace SocketComm
 		 */
 		int SendTcpMessage(sf::Packet &packet);
 		/**
-		 * SendUpdMessage
+		 * SendUdpMessage
 		 * @param packet data message to send to local socket.
 		 * @return sf::SocketStatus enum value.
 		 */
-		int SendUpdMessage(sf::Packet &packet);
+		int SendUdpMessage(sf::Packet &packet);
 
-		/** Number of rows to send per segment */
-		uint16_t mRowSize = 480; // mRowSize * 556 * 4
+		/** Number of segments */
+		uint16_t mSegments = 1; 
 		/** Number of frames that have passed */
 		uint32_t mFrameCount = 0;
 		/** Port to send on, either Slippi or Video */
