@@ -10,7 +10,7 @@
 #include <deque>
 #include <ctime>
 
-#include <SocketComm/OutputComm.hpp>
+#include <Core/SocketComm/OutputComm.hpp>
 
 #include "Common/CommonTypes.h"
 #include "Common/FileUtil.h"

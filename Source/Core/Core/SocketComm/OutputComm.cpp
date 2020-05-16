@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "SocketComm/OutputComm.hpp"
+#include "Core/SocketComm/OutputComm.hpp"
 
 #include "Common/MsgHandler.h"
 #include "Core/ConfigManager.h"
@@ -219,10 +219,6 @@ namespace SocketComm
 			if (SendUdpMessage(packet) != sf::Socket::Done)
 			{
 				std::cout << "SendUpdate(32 m_device_number, GCPadStatus &pad_status) failed to send." << std::endl;
-			}
-			else
-			{
-									std::cout << "Sent to " << sending_address.toString() << " Port " << mPort << std::endl;
 			}
 		}
 	}

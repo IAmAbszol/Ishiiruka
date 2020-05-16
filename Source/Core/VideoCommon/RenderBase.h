@@ -32,7 +32,7 @@
 #include "VideoCommon/VideoBackendBase.h"
 #include "VideoCommon/VideoCommon.h"
 
-#include "SocketComm/OutputComm.hpp"
+#include "Core/SocketComm/OutputComm.hpp"
 
 class PostProcessor;
 

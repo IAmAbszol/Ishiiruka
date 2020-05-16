@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "SocketComm/InputComm.hpp"
+#include "Core/SocketComm/InputComm.hpp"
 #include "Common/MsgHandler.h"
 #include <json.hpp>
 

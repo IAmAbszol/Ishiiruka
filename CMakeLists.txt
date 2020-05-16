@@ -666,9 +666,6 @@ add_definitions(-fexceptions)
 include_directories(Externals/lsignal)
 include_directories(Externals/nlohmann)
 
-add_subdirectory(Externals/SocketComm)
-include_directories(Externals/SocketComm)
-
 if(USE_SHARED_ENET)
 	check_lib(ENET libenet enet enet/enet.h QUIET)
 	include(CheckSymbolExists)

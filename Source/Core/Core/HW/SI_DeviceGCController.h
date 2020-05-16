@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include <SocketComm/InputComm.hpp>
+#include <Core/SocketComm/InputComm.hpp>
 
 #include "Core/HW/GCPad.h"
 #include "Core/HW/SI_Device.h"

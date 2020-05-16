@@ -10,7 +10,7 @@
 #include <thread>
 
 #include "InputCommon/GCPadStatus.h"
-#include "SocketComm/OutputComm.hpp"
+#include "Core/SocketComm/OutputComm.hpp"
 
 #include "Common/CommonTypes.h"
 #include "SFML/Network.hpp"

@@ -189,6 +189,8 @@ set(SRCS	ActionReplay.cpp
 			PowerPC/JitILCommon/JitILBase_FloatingPoint.cpp
 			PowerPC/JitILCommon/JitILBase_Integer.cpp
 			Slippi/SlippiReplayComm.cpp
+			SocketComm/InputComm.cpp
+			SocketComm/OutputComm.cpp
 			)
 
 if(_M_X86)
@@ -239,11 +241,11 @@ set(LIBS
 	discio
 	enet
 	inputcommon
+	jpeglib
 	${LZO}
 	sfml-network
 	sfml-system
 	SlippiLib
-	SocketComm
 	videoogl
 	videosoftware
 	z
