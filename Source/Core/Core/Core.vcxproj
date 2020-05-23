@@ -36,12 +36,12 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ExternalsDir)SocketComm\include;$(ExternalsDir)nlohmann;$(SolutionsDir)SocketComm\include;$(ExternalsDir)nlohmann;$(ExternalsDir)SlippiLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalsDir)nlohmann;$(ExternalsDir)jpeg-8;$(SolutionsDir)SocketComm\include;$(ExternalsDir)nlohmann;$(ExternalsDir)SlippiLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ExternalsDir)nlohmann;$(ExternalsDir)SocketComm\include;$(ExternalsDir)SlippiLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalsDir)nlohmann;$(ExternalsDir)SlippiLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -266,6 +266,8 @@
     <ClCompile Include="PowerPC\Profiler.cpp" />
     <ClCompile Include="PowerPC\SignatureDB.cpp" />
     <ClCompile Include="Slippi\SlippiReplayComm.cpp" />
+    <ClCompile Include="SocketComm\InputComm.cpp" />
+    <ClCompile Include="SocketComm\OutputComm.cpp" />
     <ClCompile Include="State.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -458,6 +460,8 @@
     <ClInclude Include="PowerPC\Profiler.h" />
     <ClInclude Include="PowerPC\SignatureDB.h" />
     <ClInclude Include="Slippi\SlippiReplayComm.h" />
+    <ClInclude Include="SocketComm\InputComm.hpp" />
+    <ClInclude Include="SocketComm\OutputComm.hpp" />
     <ClInclude Include="State.h" />
   </ItemGroup>
   <ItemGroup>
@@ -512,8 +516,8 @@
     <ProjectReference Include="..\..\..\Externals\SlippiLib\SlippiLib.vcxproj">
       <Project>{ff39260b-839a-4a6c-a117-caa73c1683f5}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\Externals\SocketComm\SocketComm.vcxproj">
-      <Project>{ff39260b-839a-4a6c-a117-caa73c1683f5}</Project>
+    <ProjectReference Include="..\..\..\Externals\jpeg-8\jpeglib.vcxproj">
+      <Project>{74B3EACF-730F-3248-99FE-771296893863}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -46,7 +46,7 @@
       <BaseAddress>0x00400000</BaseAddress>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <FixedBaseAddress>true</FixedBaseAddress>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\Build\$(Platform)\$(Configuration)\SocketComm\;$(ExternalsDir)ffmpeg\lib;$(ExternalsDir)OpenAL\$(PlatformName);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ExternalsDir)ffmpeg\lib;$(ExternalsDir)OpenAL\$(PlatformName);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>avrt.lib;dsound.lib;iphlpapi.lib;winmm.lib;setupapi.lib;OpenAL32.lib;opengl32.lib;glu32.lib;rpcrt4.lib;comctl32.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;version.lib;qwave.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">/NODEFAULTLIB:libcmt /ignore:4281 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">/NODEFAULTLIB:libcmt /ignore:4281 %(AdditionalOptions)</AdditionalOptions>
@@ -61,10 +61,10 @@
       <EnableDpiAwareness>true</EnableDpiAwareness>
     </Manifest>
     <ClCompile>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ExternalsDir)nlohmann;$(ExternalsDir)SocketComm\include\;$(ExternalsDir)zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ExternalsDir)nlohmann;$(ExternalsDir)zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ExternalsDir)SocketComm\include;$(ExternalsDir)nlohmann;$(ExternalsDir)zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ExternalsDir)nlohmann;$(ExternalsDir)zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -247,6 +247,9 @@
     </ProjectReference>
     <ProjectReference Include="$(ExternalsDir)SFML\build\vc2010\SFML_Network.vcxproj">
       <Project>{93D73454-2512-424E-9CDA-4BB357FE13DD}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(ExternalsDir)jpeg-8\jpeglib.vcxproj">
+      <Project>{74B3EACF-730F-3248-99FE-771296893863}</Project>
     </ProjectReference>
     <ProjectReference Include="$(ExternalsDir)wxWidgets3\build\msw\wx_base.vcxproj">
       <Project>{1C8436C9-DBAF-42BE-83BC-CF3EC9175ABE}</Project>

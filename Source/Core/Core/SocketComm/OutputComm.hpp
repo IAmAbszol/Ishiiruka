@@ -35,9 +35,9 @@ namespace SocketComm
 	static const uint16_t 		SLIPPI_PORT 		= 55080;
 	static const uint16_t 		VIDEO_PORT 			= 55081;
 	/** Defaulted IP address for this client. */
-	static const std::string 	IP_ADDRESS 			= "192.168.1.2";
+	static const std::string 	IP_ADDRESS 			= "127.0.0.1";
 	/** JPEG image quality being sent over (100 = 215KB, 25 = 31KB). */
-	static const uint8_t		JPEG_QUALITY	= 25;
+	static const uint8_t		JPEG_QUALITY		= 25;
 
 	class OutputComm
 	{

@@ -142,6 +142,9 @@
     <Filter Include="Slippi">
       <UniqueIdentifier>{09518b35-f1cc-428f-b2f7-6210874489a9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SocketComm">
+      <UniqueIdentifier>{89284dc7-4bf1-4fa6-8942-b6c34ba1b89a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BootManager.cpp" />
@@ -760,6 +763,12 @@
     <ClCompile Include="Slippi\SlippiReplayComm.cpp">
       <Filter>Slippi</Filter>
     </ClCompile>
+    <ClCompile Include="SocketComm\InputComm.cpp">
+      <Filter>SocketComm</Filter>
+    </ClCompile>
+    <ClCompile Include="SocketComm\OutputComm.cpp">
+      <Filter>SocketComm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BootManager.h" />
@@ -1297,6 +1306,12 @@
     <ClInclude Include="DSP\Jit\DSPEmitter.h" />
     <ClInclude Include="Slippi\SlippiReplayComm.h">
       <Filter>Slippi</Filter>
+    </ClInclude>
+    <ClInclude Include="SocketComm\InputComm.hpp">
+      <Filter>SocketComm</Filter>
+    </ClInclude>
+    <ClInclude Include="SocketComm\OutputComm.hpp">
+      <Filter>SocketComm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

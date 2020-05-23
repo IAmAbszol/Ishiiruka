@@ -39,14 +39,14 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <ForcedIncludeFiles />
-      <AdditionalIncludeDirectories>$(ExternalsDir)SocketComm\include;$(ExternalsDir)nlohmann;$(ExternalsDir)zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalsDir)nlohmann;$(ExternalsDir)zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <ForcedIncludeFiles />
-      <AdditionalIncludeDirectories>$(ExternalsDir)nlohmann;$(ExternalsDir)SocketComm\include\;$(ExternalsDir)zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalsDir)nlohmann;$(ExternalsDir)zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

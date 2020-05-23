@@ -37,7 +37,7 @@
   <PropertyGroup Label="UserMacros" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ExternalsDir)nlohmann;$(ExternalsDir)SocketComm\include\;$(ExternalsDir)ffmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalsDir)nlohmann;$(ExternalsDir)ffmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -47,7 +47,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ExternalsDir)SocketComm\include;$(ExternalsDir)nlohmann;$(ExternalsDir)ffmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ExternalsDir)nlohmann;$(ExternalsDir)ffmpeg\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Lib>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
@@ -244,9 +244,6 @@
     </ProjectReference>
     <ProjectReference Include="..\..\..\Externals\xbrz\xbrz.vcxproj">
       <Project>{869ea016-4458-2a45-25af-dc44d6e98c0a}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Externals\SocketComm\SocketComm.vcxproj">
-      <Project>{ff39260b-839a-4a6c-a117-caa73c1683f5}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
