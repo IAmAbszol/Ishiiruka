@@ -144,27 +144,28 @@ void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int heigh
 		jpeg_finish_compress(&jpeg_cinfo);
 		jpeg_destroy_compress(&jpeg_cinfo);
 
-		uint64_t m_current_pos = 0;
-		uint64_t block_size = outbuffer_size / mSegments;
+		uint32_t reduced_outbuffer_size = static_cast<uint32_t>(outbuffer_size);
+		uint32_t m_current_pos = 0;
+		uint32_t block_size = reduced_outbuffer_size / mSegments;
 		// WARNING! mSegments > 1 causes the jpeg reconstruction to fail. Still not 100% why but buffer out == buffer
 		// in. Wack.
 		for (uint8_t segment = 0; segment < mSegments; segment++)
 		{
-			if ((m_current_pos + block_size) > outbuffer_size)
+			if ((m_current_pos + block_size) > reduced_outbuffer_size)
 			{
-				block_size -= ((m_current_pos + block_size) - outbuffer_size);
+				block_size -= ((m_current_pos + block_size) - reduced_outbuffer_size);
 			}
 			// Total header bytes = 35
 			data_packet.clear();
-			//data_packet << mFrameCount;
-			//data_packet << segment;
-			//data_packet << mSegments;
-			//data_packet << width;
-			//data_packet << height;
-			data_packet << (sf::Uint64)block_size;
-			//data_packet << (sf::Uint64)outbuffer_size;
-			//data_packet << (sf::Uint64)GetTimeSinceEpoch();
-			//data_packet.append(reinterpret_cast<const char *>(&jpeg_buffer[m_current_pos]), block_size);
+			data_packet << mFrameCount;
+			data_packet << segment;
+			data_packet << mSegments;
+			data_packet << width;
+			data_packet << height;
+			data_packet << block_size;
+			data_packet << reduced_outbuffer_size;
+			data_packet << (sf::Uint64)GetTimeSinceEpoch();
+			data_packet.append(reinterpret_cast<const char *>(&jpeg_buffer[m_current_pos]), block_size);
 			if (SendUdpMessage(data_packet) != sf::Socket::Done)
 			{
 				std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool "

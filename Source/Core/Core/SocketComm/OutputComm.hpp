@@ -103,7 +103,7 @@ namespace SocketComm
 		int SendUdpMessage(sf::Packet &packet);
 
 		/** Number of segments */
-		uint16_t mSegments = 1; 
+		uint8_t mSegments = 1; 
 		/** Number of frames that have passed */
 		uint32_t mFrameCount = 0;
 		/** Port to send on, either Slippi or Video */
