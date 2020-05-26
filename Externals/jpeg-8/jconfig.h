@@ -50,6 +50,12 @@
  */
 #undef CHAR_IS_UNSIGNED
 
+/* Define "boolean" as unsigned char, not int, per Windows custom */
+#ifndef __RPCNDR_H__		/* don't conflict if rpcndr.h already read */
+typedef unsigned char boolean;
+#endif
+#define HAVE_BOOLEAN 1		/* prevent jmorecfg.h from redefining it */
+
 /* Define this if your system has an ANSI-conforming <stddef.h> file.
  */
 #define HAVE_STDDEF_H
