@@ -1,6 +1,7 @@
 #include <chrono>
 #include <iostream>
 #include <limits>
+#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -53,9 +54,12 @@ OutputComm::~OutputComm()
 	}
 }
 
-uint64_t OutputComm::GetTimeSinceEpoch()
+std::tuple<uint32_t, uint32_t> OutputComm::GetTimeSinceEpoch()
 {
-	return std::chrono::duration_cast<std::chrono::microseconds>(mClock.now().time_since_epoch()).count();
+	uint64_t current_time = std::chrono::duration_cast<std::chrono::microseconds>(mClock.now().time_since_epoch()).count();
+	double seconds		= 0;
+	uint32_t microseconds = (uint32_t) (std::modf((double) (current_time / pow(10, 6)), &seconds) * pow(10, 6));
+	return std::make_tuple((uint32_t)seconds, (uint32_t)microseconds);
 }
 
 const bool OutputComm::IsConnected() const
@@ -157,6 +161,7 @@ void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int heigh
 			}
 			// Total header bytes = 35
 			data_packet.clear();
+			auto current_time = GetTimeSinceEpoch();
 			data_packet << mFrameCount;
 			data_packet << segment;
 			data_packet << mSegments;
@@ -164,7 +169,8 @@ void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int heigh
 			data_packet << height;
 			data_packet << block_size;
 			data_packet << reduced_outbuffer_size;
-			data_packet << (sf::Uint64)GetTimeSinceEpoch();
+			data_packet.append(&std::get<0>(current_time), sizeof(uint32_t));
+			data_packet.append(&std::get<1>(current_time), sizeof(uint32_t));
 			data_packet.append(reinterpret_cast<const char *>(&jpeg_buffer[m_current_pos]), block_size);
 			if (SendUdpMessage(data_packet) != sf::Socket::Done)
 			{
@@ -206,8 +212,11 @@ void OutputComm::SendUpdate(u32 m_device_number, GCPadStatus &pad_status)
 {
 	if (mConnected)
 	{
+		auto current_time = GetTimeSinceEpoch();
 		sf::Packet packet;
 		packet.append(&m_device_number, sizeof(m_device_number));
+		packet.append(&std::get<0>(current_time), sizeof(uint32_t));
+		packet.append(&std::get<1>(current_time), sizeof(uint32_t));
 		packet.append(&pad_status, sizeof(pad_status));
 		if (SendUdpMessage(packet) != sf::Socket::Done)
 		{

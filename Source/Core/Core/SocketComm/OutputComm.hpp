@@ -6,8 +6,7 @@
 #pragma once
 
 #include <cstdint>
-#include <jpeglib.h>
-#include <json.hpp>
+#include <map>
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -16,6 +15,9 @@
 #include "Common/CommonTypes.h"
 #include "InputCommon/GCPadStatus.h"
 #include "SFML/Network.hpp"
+
+#include <jpeglib.h>
+#include <json.hpp>
 
 using json = nlohmann::json;
 
@@ -88,7 +90,7 @@ namespace SocketComm
 		/**
 		 * GetTimeSinceEpoch
 		 */
-		uint64_t GetTimeSinceEpoch();
+		std::tuple<uint32_t, uint32_t> GetTimeSinceEpoch();
 		/**
 		 * SendTcpMessage
 		 * @param packet data message to send to local socket.

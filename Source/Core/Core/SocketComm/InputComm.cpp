@@ -57,9 +57,9 @@ void InputComm::ReadSocket()
         {
             try 
             {
+				GCPadStatus pad;
                 std::string json_string(receiving_size, received);
 		        json json_body = json::parse(json_string);
-                GCPadStatus pad;
                 pad.button = json_body["button"].get<u16>();
                 pad.stickX = json_body["stickX"].get<u8>();
                 pad.stickY = json_body["stickY"].get<u8>();
@@ -77,7 +77,6 @@ void InputComm::ReadSocket()
                 std::cout << e.what() << std::endl;
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
