@@ -181,6 +181,10 @@ void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int heigh
 
 			m_current_pos += block_size;
 		}
+		buffer.clear();
+		data_packet.clear();
+		free(jpeg_buffer); 
+		jpeg_buffer = NULL;
 	}
 
 	if (mFrameCount >= std::numeric_limits<uint32_t>::max())
