@@ -31,15 +31,17 @@ Follow the instructions listed below on building for your respective Operating S
 
 Run the build.sh script that will construct a netplay dolphin folder, this is important as the settings configured in the script allow Dolphin to write Slippi file data; thus allowing image and Slippi data to be written through the sockets. After everything is built, the Dolphin emulator will setup socket communications for the following.
 
-**Input Communication** *(Located in Externals/SocketComm/include/SocketComm/InputComm.hpp)*
+**Input Communication** *(Located in Source/Core/Core/SocketComm/include/SocketComm/InputComm.hpp)*
 Port Range(s): **55082-55086** w.r.t Player(s)
 
-**Output Communication** *(Located in Externals/SocketComm/include/SocketComm/OutputComm.hpp)*
+**Output Communication** *(Located in Source/Core/Core/SocketComm/include/SocketComm/OutputComm.hpp)*
 - Controller Port: **55079**
 - Slippi Port: **55080**
 - Video Port: **55081**
 
 **I/O is configured for localhost (127.0.0.1)**
+
+* Later this will be changed to a configuration file located in either Sys or Usr *
 
 ### Running Python
 #### Coming soon...
