@@ -308,6 +308,11 @@ void SConfig::SaveCoreSettings(IniFile& ini)
 	core->Set("QoSEnabled", bQoSEnabled);
 	core->Set("AdapterWarning", bAdapterWarning);
     core->Set("ShownLagReductionWarning", bHasShownLagReductionWarning);
+	core->Set("StartingPlayerPort", m_StartingPlayerPort);
+	core->Set("ControllerPort", m_ControllerPort);
+	core->Set("SlippiPort", m_SlippiPort);
+	core->Set("VideoPort", m_VideoPort);
+	core->Set("SendingIpAddress", m_SendingIpAddress);
 }
 
 void SConfig::SaveMovieSettings(IniFile& ini)
@@ -636,6 +641,11 @@ void SConfig::LoadCoreSettings(IniFile& ini)
 	core->Get("QoSEnabled", &bQoSEnabled, true);
 	core->Get("AdapterWarning", &bAdapterWarning, true);
     core->Get("ShownLagReductionWarning", &bHasShownLagReductionWarning, false);
+	core->Get("StartingPlayerPort", &m_StartingPlayerPort, 55082);
+	core->Get("ControllerPort", &m_ControllerPort, 55079);
+	core->Get("SlippiPort", &m_SlippiPort, 55080);
+	core->Get("VideoPort", &m_VideoPort, 55081);
+	core->Get("SendingIpAddress", &m_SendingIpAddress, "127.0.0.1");
 }
 
 void SConfig::LoadMovieSettings(IniFile& ini)

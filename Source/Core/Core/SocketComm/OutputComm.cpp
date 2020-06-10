@@ -16,8 +16,13 @@ namespace SocketComm
 {
 
 OutputComm::OutputComm(OutputType m_type)
-    : sending_address(IP_ADDRESS)
+    : sending_address(SConfig::GetInstance().m_SendingIpAddress)
 {
+	// Load SConfig settings
+	CONTROLLER_PORT = SConfig::GetInstance().m_ControllerPort;
+	SLIPPI_PORT = SConfig::GetInstance().m_SlippiPort;
+	VIDEO_PORT = SConfig::GetInstance().m_VideoPort;
+	
 	switch (m_type)
 	{
 	case OutputType::CONTROLLER_BACKEND:

@@ -13,6 +13,7 @@
 #include <tuple>
 
 #include "Common/CommonTypes.h"
+#include "Core/ConfigManager.h"
 #include "InputCommon/GCPadStatus.h"
 #include "SFML/Network.hpp"
 
@@ -33,9 +34,9 @@ namespace SocketComm
 	};
 
 	/** Designated ports per interface. */
-	static const uint16_t 		CONTROLLER_PORT 	= 55079;
-	static const uint16_t 		SLIPPI_PORT 		= 55080;
-	static const uint16_t 		VIDEO_PORT 			= 55081;
+	static uint16_t 		CONTROLLER_PORT 	= 55079;
+	static uint16_t 		SLIPPI_PORT 		= 55080;
+	static uint16_t 		VIDEO_PORT 			= 55081;
 	/** Defaulted IP address for this client. */
 	static const std::string 	IP_ADDRESS 			= "127.0.0.1";
 	/** JPEG image quality being sent over (100 = 215KB, 25 = 31KB). */
