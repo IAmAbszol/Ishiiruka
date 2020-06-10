@@ -16,8 +16,8 @@ To have everything transition smoothly, I had originally compiled the project to
 | Add function to send controller state with OutputComm | Complete | 03/01/2020 |
 | Stress test UDP vs TCP implementation      | Complete      | 04/21/2020 |
 | Update CMake files      | Discarded      | 04/18/2020 |
-| Docker Dolphin Container w/ X11 | In Progress | 04/21/2020 |
-| Build character selection macro | Not Started      | 03/01/2020 |
+| Docker Dolphin Container w/ X11 | Discarded | 06/10/2020 |
+| Build character selection macro | In Progress      | 03/01/2020 |
 | Write Python code to parse chunked Pre/Post frame updates | Complete | 05/30/2020 |
 | Write Python code to parse and convert image data to PNG | Complete | 05/30/2020 |
 | Write correlator between two sockets receiving data | Not Started | 03/01/2020 |
