@@ -16,8 +16,8 @@ To have everything transition smoothly, I had originally compiled the project to
 | Add function to send controller state with OutputComm | Complete | 03/01/2020 |
 | Stress test UDP vs TCP implementation      | Complete      | 04/21/2020 |
 | Update CMake files      | Discarded      | 04/18/2020 |
-| Docker Dolphin Container w/ X11 | In Progress | 04/21/2020 |
-| Build character selection macro | Not Started      | 03/01/2020 |
+| Docker Dolphin Container w/ X11 | Discarded | 06/10/2020 |
+| Build character selection macro | In Progress      | 03/01/2020 |
 | Write Python code to parse chunked Pre/Post frame updates | Complete | 05/30/2020 |
 | Write Python code to parse and convert image data to PNG | Complete | 05/30/2020 |
 | Write correlator between two sockets receiving data | Not Started | 03/01/2020 |
@@ -31,15 +31,15 @@ Follow the instructions listed below on building for your respective Operating S
 
 Run the build.sh script that will construct a netplay dolphin folder, this is important as the settings configured in the script allow Dolphin to write Slippi file data; thus allowing image and Slippi data to be written through the sockets. After everything is built, the Dolphin emulator will setup socket communications for the following.
 
-**Input Communication** *(Located in Source/Core/Core/SocketComm/include/SocketComm/InputComm.hpp)*
+**Input Communication** *(Located in User/Config/Dolphin.ini -> StartingPlayerPort)*
 Port Range(s): **55082-55086** w.r.t Player(s)
 
-**Output Communication** *(Located in Source/Core/Core/SocketComm/include/SocketComm/OutputComm.hpp)*
+**Output Communication** *(User/Config/Dolphin.ini -> ControllerPort, SlippiPort, and VideoPort)*
 - Controller Port: **55079**
 - Slippi Port: **55080**
 - Video Port: **55081**
 
-**I/O is configured for localhost (127.0.0.1)**
+**I/O is configured for localhost (127.0.0.1), modifiable in User/Config/Dolphin.ini -> SendingIpAddress**
 
 * Later this will be changed to a configuration file located in either Sys or Usr *
 
