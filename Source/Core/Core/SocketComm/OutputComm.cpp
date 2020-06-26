@@ -1,7 +1,7 @@
 #include <chrono>
+#include <cmath>
 #include <iostream>
 #include <limits>
-#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,13 +16,8 @@ namespace SocketComm
 {
 
 OutputComm::OutputComm(OutputType m_type)
-    : sending_address(SConfig::GetInstance().m_SendingIpAddress)
+    : sending_address(IP_ADDRESS)
 {
-	// Load SConfig settings
-	CONTROLLER_PORT = SConfig::GetInstance().m_ControllerPort;
-	SLIPPI_PORT = SConfig::GetInstance().m_SlippiPort;
-	VIDEO_PORT = SConfig::GetInstance().m_VideoPort;
-	
 	switch (m_type)
 	{
 	case OutputType::CONTROLLER_BACKEND:
@@ -57,19 +52,24 @@ OutputComm::~OutputComm()
 	{
 		mConnected = false;
 	}
+	if (mProcessingThread.joinable())
+	{
+		mProcessingThread.join();
+	}
 }
 
 std::tuple<uint32_t, uint32_t> OutputComm::GetTimeSinceEpoch()
 {
-	uint64_t current_time = std::chrono::duration_cast<std::chrono::microseconds>(mClock.now().time_since_epoch()).count();
-	double seconds		= 0;
-	uint32_t microseconds = (uint32_t) (std::modf((double) (current_time / pow(10, 6)), &seconds) * pow(10, 6));
+	uint64_t current_time =
+	    std::chrono::duration_cast<std::chrono::microseconds>(mClock.now().time_since_epoch()).count();
+	double seconds = 0;
+	uint32_t microseconds = (uint32_t)(std::modf((double)(current_time / pow(10, 6)), &seconds) * pow(10, 6));
 	return std::make_tuple((uint32_t)seconds, (uint32_t)microseconds);
 }
 
-const bool OutputComm::IsConnected() const
+const bool OutputComm::IsReady() const
 {
-	return mConnected;
+	return mConnected & !mProcessingVideo;
 }
 
 void OutputComm::HandleConnect()
@@ -94,102 +94,115 @@ void OutputComm::HandleConnect()
 	}
 }
 
+void OutputComm::ProcessVideo(const u8 *data, int row_stride, int width, int height, bool saveAlpha, bool frombgra)
+{
+	// Data
+	sf::Packet data_packet;
+	std::vector<u8> buffer;
+	u8 *jpeg_buffer;
+	JSAMPROW jpeg_row_pointer[1];
+
+	// Setup the buffer to be written to
+	jpeg_compress_struct jpeg_cinfo;
+	jpeg_error_mgr jerr;
+	jpeg_cinfo.err = jpeg_std_error(&jerr);
+	jerr.trace_level = 10;
+	jpeg_create_compress(&jpeg_cinfo);
+	unsigned long outbuffer_size = 0;
+	jpeg_mem_dest(&jpeg_cinfo, &jpeg_buffer, &outbuffer_size);
+
+	// Setup the struct info
+	jpeg_cinfo.image_width = width;
+	jpeg_cinfo.image_height = height;
+	jpeg_cinfo.input_components = 3;
+	jpeg_cinfo.in_color_space = JCS_RGB;
+	jpeg_set_defaults(&jpeg_cinfo);
+	jpeg_set_quality(&jpeg_cinfo, JPEG_QUALITY, true);
+	jpeg_start_compress(&jpeg_cinfo, false);
+
+	buffer.resize(width * 3);
+
+	for (auto y = 0; y < height; ++y)
+	{
+		const u8 *row_ptr = data + y * row_stride;
+		// TODO : Always ensure RGB is used
+		if (!saveAlpha || frombgra)
+		{
+			int src_r = frombgra ? 2 : 0;
+			int src_b = frombgra ? 0 : 2;
+			for (int x = 0; x < width; x++)
+			{
+				buffer[3 * x + 0] = row_ptr[4 * x + src_r];
+				buffer[3 * x + 1] = row_ptr[4 * x + 1];
+				buffer[3 * x + 2] = row_ptr[4 * x + src_b];
+			}
+			row_ptr = buffer.data();
+		}
+		if (jpeg_cinfo.next_scanline >= jpeg_cinfo.image_height)
+		{
+			std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool "
+			             "frombgra) JPEG Conversion Error, height out of bounds."
+			          << std::endl;
+			return;
+		}
+		jpeg_row_pointer[0] = (uint8_t *)buffer.data();
+		jpeg_write_scanlines(&jpeg_cinfo, jpeg_row_pointer, 1);
+	}
+	jpeg_finish_compress(&jpeg_cinfo);
+	jpeg_destroy_compress(&jpeg_cinfo);
+
+	uint32_t reduced_outbuffer_size = static_cast<uint32_t>(outbuffer_size);
+	uint32_t m_current_pos = 0;
+	uint32_t block_size = reduced_outbuffer_size / mSegments;
+	// WARNING! mSegments > 1 causes the jpeg reconstruction to fail. Still not 100% why but buffer out == buffer
+	// in. Wack.
+	for (uint8_t segment = 0; segment < mSegments; segment++)
+	{
+		if ((m_current_pos + block_size) > reduced_outbuffer_size)
+		{
+			block_size -= ((m_current_pos + block_size) - reduced_outbuffer_size);
+		}
+		// Total header bytes = 35
+		data_packet.clear();
+		auto current_time = GetTimeSinceEpoch();
+		data_packet << mFrameCount;
+		data_packet << segment;
+		data_packet << mSegments;
+		data_packet << width;
+		data_packet << height;
+		data_packet << block_size;
+		data_packet << reduced_outbuffer_size;
+		data_packet.append(&std::get<0>(current_time), sizeof(uint32_t));
+		data_packet.append(&std::get<1>(current_time), sizeof(uint32_t));
+		data_packet.append(reinterpret_cast<const char *>(&jpeg_buffer[m_current_pos]), block_size);
+		if (SendUdpMessage(data_packet) != sf::Socket::Done)
+		{
+			std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool "
+			             "frombgra) failed to send."
+			          << std::endl;
+		}
+
+		m_current_pos += block_size;
+	}
+	buffer.clear();
+	data_packet.clear();
+	free(jpeg_buffer);
+	jpeg_buffer = NULL;
+
+	mProcessingVideo = false;
+}
+
 void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int height, bool saveAlpha, bool frombgra)
 {
-	if (mConnected)
+	if (mConnected & !mProcessingVideo)
 	{
-		// Data
-		sf::Packet data_packet;
-		std::vector<u8> buffer;
-		u8 *jpeg_buffer;
-		JSAMPROW jpeg_row_pointer[1];
-
-		// Setup the buffer to be written to
-		jpeg_compress_struct jpeg_cinfo;
-		jpeg_error_mgr jerr;
-		jpeg_cinfo.err = jpeg_std_error(&jerr);
-		jerr.trace_level = 10;
-		jpeg_create_compress(&jpeg_cinfo);
-		unsigned long outbuffer_size = 0;
-		jpeg_mem_dest(&jpeg_cinfo, &jpeg_buffer, &outbuffer_size);
-
-		// Setup the struct info
-		jpeg_cinfo.image_width = width;
-		jpeg_cinfo.image_height = height;
-		jpeg_cinfo.input_components = 3;
-		jpeg_cinfo.in_color_space = JCS_RGB;
-		jpeg_set_defaults(&jpeg_cinfo);
-		jpeg_set_quality(&jpeg_cinfo, JPEG_QUALITY, true);
-		jpeg_start_compress(&jpeg_cinfo, false);
-
-		buffer.resize(width * 3);
-
-		for (auto y = 0; y < height; ++y)
+		std::lock_guard<std::mutex> lock(mLock);
+		mProcessingVideo = true;
+		if (mProcessingThread.joinable())
 		{
-			const u8 *row_ptr = data + y * row_stride;
-			// TODO : Always ensure RGB is used
-			if (!saveAlpha || frombgra)
-			{
-				int src_r = frombgra ? 2 : 0;
-				int src_b = frombgra ? 0 : 2;
-				for (int x = 0; x < width; x++)
-				{
-					buffer[3 * x + 0] = row_ptr[4 * x + src_r];
-					buffer[3 * x + 1] = row_ptr[4 * x + 1];
-					buffer[3 * x + 2] = row_ptr[4 * x + src_b];
-				}
-				row_ptr = buffer.data();
-			}
-			if (jpeg_cinfo.next_scanline >= jpeg_cinfo.image_height)
-			{
-				std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool "
-				             "frombgra) JPEG Conversion Error, height out of bounds."
-				          << std::endl;
-				return;
-			}
-			jpeg_row_pointer[0] = (uint8_t *)buffer.data();
-			jpeg_write_scanlines(&jpeg_cinfo, jpeg_row_pointer, 1);
+			mProcessingThread.join();
 		}
-		jpeg_finish_compress(&jpeg_cinfo);
-		jpeg_destroy_compress(&jpeg_cinfo);
-
-		uint32_t reduced_outbuffer_size = static_cast<uint32_t>(outbuffer_size);
-		uint32_t m_current_pos = 0;
-		uint32_t block_size = reduced_outbuffer_size / mSegments;
-		// WARNING! mSegments > 1 causes the jpeg reconstruction to fail. Still not 100% why but buffer out == buffer
-		// in. Wack.
-		for (uint8_t segment = 0; segment < mSegments; segment++)
-		{
-			if ((m_current_pos + block_size) > reduced_outbuffer_size)
-			{
-				block_size -= ((m_current_pos + block_size) - reduced_outbuffer_size);
-			}
-			// Total header bytes = 35
-			data_packet.clear();
-			auto current_time = GetTimeSinceEpoch();
-			data_packet << mFrameCount;
-			data_packet << segment;
-			data_packet << mSegments;
-			data_packet << width;
-			data_packet << height;
-			data_packet << block_size;
-			data_packet << reduced_outbuffer_size;
-			data_packet.append(&std::get<0>(current_time), sizeof(uint32_t));
-			data_packet.append(&std::get<1>(current_time), sizeof(uint32_t));
-			data_packet.append(reinterpret_cast<const char *>(&jpeg_buffer[m_current_pos]), block_size);
-			if (SendUdpMessage(data_packet) != sf::Socket::Done)
-			{
-				std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool "
-				             "frombgra) failed to send."
-				          << std::endl;
-			}
-
-			m_current_pos += block_size;
-		}
-		buffer.clear();
-		data_packet.clear();
-		free(jpeg_buffer); 
-		jpeg_buffer = NULL;
+		mProcessingThread = std::thread(&OutputComm::ProcessVideo, this, data, row_stride, width, height, saveAlpha, frombgra);
 	}
 
 	if (mFrameCount >= std::numeric_limits<uint32_t>::max())

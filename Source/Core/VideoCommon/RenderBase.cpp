@@ -875,7 +875,7 @@ void Renderer::Swap(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const 
 
 bool Renderer::IsFrameDumping()
 {
-	if (m_screenshot_request.IsSet() || m_output_comm.IsConnected() || SConfig::GetInstance().m_DumpFrames)
+	if (m_screenshot_request.IsSet() || m_output_comm.IsReady() || SConfig::GetInstance().m_DumpFrames)
 		return true;
 
 #if defined(HAVE_LIBAV) || defined(_WIN32)
@@ -967,7 +967,7 @@ void Renderer::RunFrameDumps()
 			m_screenshot_completed.Set();
 		}
 		// Write to socket
-		if (m_output_comm.IsConnected())
+		if (m_output_comm.IsReady())
 		{
 			m_output_comm.SendUpdate(config.data, config.stride, config.width, config.height, false, false);
 		}

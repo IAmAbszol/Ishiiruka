@@ -15,7 +15,7 @@ namespace SocketComm
 InputComm::InputComm(u32 device_number) : 
                             mOutputComm(OutputType::CONTROLLER_BACKEND),
                             mDeviceNumber(device_number),
-                            mPort(SConfig::GetInstance().m_StartingPlayerPort + device_number)
+                            mPort(DEFAULT_PORT + device_number)
 {
     if(mPort)
     {

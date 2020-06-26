@@ -127,12 +127,6 @@ struct SConfig : NonCopyable
 	bool bQoSEnabled = true;
 	bool bAdapterWarning = true;
 
-	int m_StartingPlayerPort = 55082;
-	int m_ControllerPort = 55079;
-	int m_SlippiPort = 55080;
-	int m_VideoPort = 55081;
-	std::string m_SendingIpAddress = "127.0.0.1";
-
     MeleeLagReductionCode iLagReductionCode = MELEE_LAG_REDUCTION_CODE_UNSET;
     bool bHasShownLagReductionWarning = false;
     bool bMeleeForceWidescreen = false;

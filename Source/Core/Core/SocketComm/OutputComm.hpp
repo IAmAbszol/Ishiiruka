@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <map>
 #include <mutex>
@@ -13,7 +14,6 @@
 #include <tuple>
 
 #include "Common/CommonTypes.h"
-#include "Core/ConfigManager.h"
 #include "InputCommon/GCPadStatus.h"
 #include "SFML/Network.hpp"
 
@@ -34,9 +34,9 @@ namespace SocketComm
 	};
 
 	/** Designated ports per interface. */
-	static uint16_t 		CONTROLLER_PORT 	= 55079;
-	static uint16_t 		SLIPPI_PORT 		= 55080;
-	static uint16_t 		VIDEO_PORT 			= 55081;
+	static const uint16_t 		CONTROLLER_PORT 	= 55079;
+	static const uint16_t 		SLIPPI_PORT 		= 55080;
+	static const uint16_t 		VIDEO_PORT 			= 55081;
 	/** Defaulted IP address for this client. */
 	static const std::string 	IP_ADDRESS 			= "127.0.0.1";
 	/** JPEG image quality being sent over (100 = 215KB, 25 = 31KB). */
@@ -61,12 +61,7 @@ namespace SocketComm
 		 * IsConnected
 		 * @return true if connected
 		 */
-		const bool IsConnected() const;
-
-		/**
-		  * HandleConnect
-		  **/
-		void HandleConnect();
+	    const bool IsReady() const;
 
 		/**
 		 * SendUpdate
@@ -92,6 +87,16 @@ namespace SocketComm
 		 * GetTimeSinceEpoch
 		 */
 		std::tuple<uint32_t, uint32_t> GetTimeSinceEpoch();
+		/**
+		* ProcessVideo
+		* @copydoc TextureToPng
+		*/
+	    void ProcessVideo(const u8 *data, int row_stride, int width, 
+			int height, bool saveAlpha, bool frombgra);
+		/**
+		  * HandleConnect
+		  **/
+		void HandleConnect();
 		/**
 		 * SendTcpMessage
 		 * @param packet data message to send to local socket.
@@ -119,6 +124,8 @@ namespace SocketComm
 		bool mConnected = false;
 		/** Handle socket connection status */
 		bool mHandleConnections = true;
+	    /** Handles video conversion */
+	    std::atomic_bool mProcessingVideo = {0};
 		/** Sending socket for the UDP out going updates. */
 		sf::UdpSocket mUdpSocket;
 		/** Sending socket for the TCP out going updates. */
@@ -129,5 +136,7 @@ namespace SocketComm
 		std::thread mHandleConnectThread;
 		/** Mutex lock for accessing thread. */
 		std::mutex mLock;
+	    /** Processing thread for video */
+	    std::thread mProcessingThread;
 	};
 }
