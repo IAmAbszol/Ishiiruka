@@ -119,13 +119,13 @@ namespace SocketComm
 		/** Address to send on */
 		sf::IpAddress sending_address;
 		/** Clock */
-		std::chrono::high_resolution_clock mClock;
+		std::chrono::system_clock mClock;
 		/** Current socket status */
 		bool mConnected = false;
 		/** Handle socket connection status */
 		bool mHandleConnections = true;
 	    /** Handles video conversion */
-	    std::atomic_bool mProcessingVideo = {0};
+	    std::atomic<bool> mProcessingVideo = {0};
 		/** Sending socket for the UDP out going updates. */
 		sf::UdpSocket mUdpSocket;
 		/** Sending socket for the TCP out going updates. */

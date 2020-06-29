@@ -61,9 +61,10 @@ OutputComm::~OutputComm()
 std::tuple<uint32_t, uint32_t> OutputComm::GetTimeSinceEpoch()
 {
 	uint64_t current_time =
-	    std::chrono::duration_cast<std::chrono::microseconds>(mClock.now().time_since_epoch()).count();
+	    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	double seconds = 0;
 	uint32_t microseconds = (uint32_t)(std::modf((double)(current_time / pow(10, 6)), &seconds) * pow(10, 6));
+	
 	return std::make_tuple((uint32_t)seconds, (uint32_t)microseconds);
 }
 
@@ -162,7 +163,7 @@ void OutputComm::ProcessVideo(const u8 *data, int row_stride, int width, int hei
 		{
 			block_size -= ((m_current_pos + block_size) - reduced_outbuffer_size);
 		}
-		// Total header bytes = 35
+		// Total header bytes = 30
 		data_packet.clear();
 		auto current_time = GetTimeSinceEpoch();
 		data_packet << mFrameCount;
@@ -172,8 +173,8 @@ void OutputComm::ProcessVideo(const u8 *data, int row_stride, int width, int hei
 		data_packet << height;
 		data_packet << block_size;
 		data_packet << reduced_outbuffer_size;
-		data_packet.append(&std::get<0>(current_time), sizeof(uint32_t));
-		data_packet.append(&std::get<1>(current_time), sizeof(uint32_t));
+		data_packet << std::get<0>(current_time);
+		data_packet << std::get<1>(current_time);
 		data_packet.append(reinterpret_cast<const char *>(&jpeg_buffer[m_current_pos]), block_size);
 		if (SendUdpMessage(data_packet) != sf::Socket::Done)
 		{
@@ -202,7 +203,8 @@ void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int heigh
 		{
 			mProcessingThread.join();
 		}
-		mProcessingThread = std::thread(&OutputComm::ProcessVideo, this, data, row_stride, width, height, saveAlpha, frombgra);
+		mProcessingThread =
+		    std::thread(&OutputComm::ProcessVideo, this, data, row_stride, width, height, saveAlpha, frombgra);
 	}
 
 	if (mFrameCount >= std::numeric_limits<uint32_t>::max())
@@ -220,7 +222,9 @@ void OutputComm::SendUpdate(std::vector<u8> &json_message)
 	if (mConnected)
 	{
 		sf::Packet packet;
-		// TODO: Make this more stream lined
+		auto current_time = GetTimeSinceEpoch();
+		packet << std::get<0>(current_time);
+		packet << std::get<1>(current_time);
 		std::string data(json_message.begin(), json_message.end());
 		packet << data;
 		if (SendUdpMessage(packet) != sf::Socket::Done)
