@@ -307,7 +307,11 @@ void SConfig::SaveCoreSettings(IniFile& ini)
 	core->Set("AllowAllNetplayVersions", bAllowAllNetplayVersions);
 	core->Set("QoSEnabled", bQoSEnabled);
 	core->Set("AdapterWarning", bAdapterWarning);
-    core->Set("ShownLagReductionWarning", bHasShownLagReductionWarning);
+   core->Set("ShownLagReductionWarning", bHasShownLagReductionWarning);
+	core->Set("SendingIpAddress", m_sendingIpAddress);
+	core->Set("ControllerPort", m_controllerPort);
+	core->Set("SlippiPort", m_slippiPort);
+	core->Set("VideoPort", m_videoPort);
 }
 
 void SConfig::SaveMovieSettings(IniFile& ini)
@@ -635,7 +639,12 @@ void SConfig::LoadCoreSettings(IniFile& ini)
 	core->Get("AllowAllNetplayVersions", &bAllowAllNetplayVersions, false);
 	core->Get("QoSEnabled", &bQoSEnabled, true);
 	core->Get("AdapterWarning", &bAdapterWarning, true);
-    core->Get("ShownLagReductionWarning", &bHasShownLagReductionWarning, false);
+	core->Get("ShownLagReductionWarning", &bHasShownLagReductionWarning, false);
+	// SocketComm I/O
+	core->Get("SendingIpAddress", &m_sendingIpAddress, "127.0.0.1");
+	core->Get("ControllerPort", &m_controllerPort, 55079);
+	core->Get("SlippiPort", &m_slippiPort, 55080);
+	core->Get("VideoPort", &m_videoPort, 55081);
 }
 
 void SConfig::LoadMovieSettings(IniFile& ini)

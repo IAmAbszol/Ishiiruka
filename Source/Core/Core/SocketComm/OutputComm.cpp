@@ -16,8 +16,11 @@ namespace SocketComm
 {
 
 OutputComm::OutputComm(OutputType m_type)
-    : sending_address(IP_ADDRESS)
+    : sending_address(SConfig::GetInstance().m_sendingIpAddress)
 {
+	CONTROLLER_PORT 	= (u16) SConfig::GetInstance().m_controllerPort;
+	SLIPPI_PORT			= (u16) SConfig::GetInstance().m_slippiPort;
+	VIDEO_PORT			= (u16) SConfig::GetInstance().m_videoPort;
 	switch (m_type)
 	{
 	case OutputType::CONTROLLER_BACKEND:
@@ -64,7 +67,7 @@ std::tuple<uint32_t, uint32_t> OutputComm::GetTimeSinceEpoch()
 	    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 	double seconds = 0;
 	uint32_t microseconds = (uint32_t)(std::modf((double)(current_time / pow(10, 6)), &seconds) * pow(10, 6));
-	
+
 	return std::make_tuple((uint32_t)seconds, (uint32_t)microseconds);
 }
 

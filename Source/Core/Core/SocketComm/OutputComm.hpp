@@ -34,13 +34,13 @@ namespace SocketComm
 	};
 
 	/** Designated ports per interface. */
-	static const uint16_t 		CONTROLLER_PORT 	= 55079;
-	static const uint16_t 		SLIPPI_PORT 		= 55080;
-	static const uint16_t 		VIDEO_PORT 			= 55081;
+	static uint16_t 		CONTROLLER_PORT 	= 55079;
+	static uint16_t 		SLIPPI_PORT 		= 55080;
+	static uint16_t 		VIDEO_PORT 			= 55081;
 	/** Defaulted IP address for this client. */
-	static const std::string 	IP_ADDRESS 			= "127.0.0.1";
+	static std::string 	IP_ADDRESS 			= "127.0.0.1";
 	/** JPEG image quality being sent over (100 = 215KB, 25 = 31KB). */
-	static const uint8_t		JPEG_QUALITY		= 25;
+	static const uint8_t		JPEG_QUALITY	= 25;
 
 	class OutputComm
 	{
@@ -91,7 +91,7 @@ namespace SocketComm
 		* ProcessVideo
 		* @copydoc TextureToPng
 		*/
-	    void ProcessVideo(const u8 *data, int row_stride, int width, 
+	    void ProcessVideo(const u8 *data, int row_stride, int width,
 			int height, bool saveAlpha, bool frombgra);
 		/**
 		  * HandleConnect
@@ -111,7 +111,7 @@ namespace SocketComm
 		int SendUdpMessage(sf::Packet &packet);
 
 		/** Number of segments */
-		uint8_t mSegments = 1; 
+		uint8_t mSegments = 1;
 		/** Number of frames that have passed */
 		uint32_t mFrameCount = 0;
 		/** Port to send on, either Slippi or Video */

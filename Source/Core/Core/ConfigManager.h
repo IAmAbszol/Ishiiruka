@@ -228,6 +228,12 @@ struct SConfig : NonCopyable
 	std::string m_strSlippiInput;
 	std::string m_strGPUDeterminismMode;
 
+	// SocketComm
+	std::string m_sendingIpAddress;
+	int m_controllerPort;
+	int m_slippiPort;
+	int m_videoPort;
+
 	// set based on the string version
 	GPUDeterminismMode m_GPUDeterminismMode;
 
