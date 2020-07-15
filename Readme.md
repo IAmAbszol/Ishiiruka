@@ -20,9 +20,7 @@ To have everything transition smoothly, I had originally compiled the project to
 | Build character selection macro | In Progress      | 03/01/2020 |
 | Write Python code to parse chunked Pre/Post frame updates | Complete | 05/30/2020 |
 | Write Python code to parse and convert image data to PNG | Complete | 05/30/2020 |
-| Write correlator between two sockets receiving data | Not Started | 03/01/2020 |
-| Write training model | Not Started | 03/01/2020 |
-| Translate model output to controller state | Not Started | 03/01/2020 |
+| Add dump frames to successfully save images to dump directory for playback, print when done | In Progress | 03/01/2020|
 
 ## Setup
 
