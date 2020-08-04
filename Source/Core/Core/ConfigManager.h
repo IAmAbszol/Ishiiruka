@@ -229,6 +229,8 @@ struct SConfig : NonCopyable
 	std::string m_strGPUDeterminismMode;
 
 	// SocketComm
+	bool m_enableSocketComm;
+	bool m_exportTrainingData;
 	std::string m_sendingIpAddress;
 	int m_controllerPort;
 	int m_slippiPort;

@@ -6,6 +6,7 @@
 
 #include "Core/SocketComm/InputComm.hpp"
 #include "Common/MsgHandler.h"
+#include "Core/ConfigManager.h"
 #include <json.hpp>
 
 using json = nlohmann::json;
@@ -17,7 +18,7 @@ InputComm::InputComm(u32 device_number) :
                             mDeviceNumber(device_number),
                             mPort(DEFAULT_PORT + device_number)
 {
-    if(mPort)
+    if(mPort && SConfig.GetInstance().m_enableSocketComm)
     {
         // Binding failed, panic! 
         if(mListenerSocket.bind(mPort) == sf::Socket::Done)

@@ -58,6 +58,12 @@ namespace SocketComm
 		~OutputComm();
 
 		/**
+		 * GetTimeSinceEpoch
+		 * @return tuple<uint32_t, uint32_t> seconds, microseconds
+		 */
+		std::tuple<uint32_t, uint32_t> GetTimeSinceEpoch();
+		
+		/**
 		 * IsConnected
 		 * @return true if connected
 		 */
@@ -83,10 +89,6 @@ namespace SocketComm
 		void SendUpdate(u32 m_device_number, GCPadStatus &pad_status);
 
 	protected:
-		/**
-		 * GetTimeSinceEpoch
-		 */
-		std::tuple<uint32_t, uint32_t> GetTimeSinceEpoch();
 		/**
 		* ProcessVideo
 		* @copydoc TextureToPng

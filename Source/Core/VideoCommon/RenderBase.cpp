@@ -875,16 +875,23 @@ void Renderer::Swap(u32 xfbAddr, u32 fbWidth, u32 fbStride, u32 fbHeight, const 
 
 bool Renderer::IsFrameDumping()
 {
+	bool ret = false;
 	if (m_screenshot_request.IsSet() || m_output_comm.IsReady() || SConfig::GetInstance().m_DumpFrames)
-		return true;
+		ret = true;
 
 #if defined(HAVE_LIBAV) || defined(_WIN32)
 	if (SConfig::GetInstance().m_DumpFrames)
-		return true;
+		ret = true;
 #endif
-
-	ShutdownFrameDumping();
-	return false;
+	if (SConfig::GetInstance().m_exportTrainingData)
+	{
+		auto timestamp_tuple = m_output_comm.GetTimeSinceEpoch();
+		std::string file_name("data_" + std::get<0>(timestamp_tuple) + "" + std::get<1>(timestamp_tuple) + ".png");
+		SaveScreenshot(file_name, true);
+	}
+	if (!ret)
+		ShutdownFrameDumping();
+	return ret;
 }
 
 void Renderer::ShutdownFrameDumping()
@@ -938,6 +945,7 @@ void Renderer::RunFrameDumps()
 			"Frame dump will be saved as images instead.");
 		dump_to_avi = false;
 	}
+   dump_to_avi = false;
 #endif
 
 	while (true)

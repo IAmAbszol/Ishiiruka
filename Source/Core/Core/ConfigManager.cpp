@@ -307,7 +307,10 @@ void SConfig::SaveCoreSettings(IniFile& ini)
 	core->Set("AllowAllNetplayVersions", bAllowAllNetplayVersions);
 	core->Set("QoSEnabled", bQoSEnabled);
 	core->Set("AdapterWarning", bAdapterWarning);
-   core->Set("ShownLagReductionWarning", bHasShownLagReductionWarning);
+        core->Set("ShownLagReductionWarning", bHasShownLagReductionWarning);
+	// SocketComm I/O
+	core->Set("EnableSocketComm", m_enableSocketComm);
+	core->Set("ExportTrainingData", m_exportTrainingData);
 	core->Set("SendingIpAddress", m_sendingIpAddress);
 	core->Set("ControllerPort", m_controllerPort);
 	core->Set("SlippiPort", m_slippiPort);
@@ -641,6 +644,8 @@ void SConfig::LoadCoreSettings(IniFile& ini)
 	core->Get("AdapterWarning", &bAdapterWarning, true);
 	core->Get("ShownLagReductionWarning", &bHasShownLagReductionWarning, false);
 	// SocketComm I/O
+	core->Get("EnableSocketComm", &m_enableSocketComm, true);
+	core->Get("ExportTrainingData", &m_exportTrainingData, false);
 	core->Get("SendingIpAddress", &m_sendingIpAddress, "127.0.0.1");
 	core->Get("ControllerPort", &m_controllerPort, 55079);
 	core->Get("SlippiPort", &m_slippiPort, 55080);
@@ -653,7 +658,9 @@ void SConfig::LoadMovieSettings(IniFile& ini)
 
 	movie->Get("PauseMovie", &m_PauseMovie, false);
 	movie->Get("Author", &m_strMovieAuthor, "");
+	std::cout << m_DumpFrames << std::endl;
 	movie->Get("DumpFrames", &m_DumpFrames, false);
+	std::cout << m_DumpFrames << std::endl;
 	movie->Get("DumpFramesSilent", &m_DumpFramesSilent, false);
 	movie->Get("ShowInputDisplay", &m_ShowInputDisplay, false);
 	movie->Get("ShowRTC", &m_ShowRTC, false);

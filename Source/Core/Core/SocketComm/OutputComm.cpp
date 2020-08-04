@@ -198,31 +198,34 @@ void OutputComm::ProcessVideo(const u8 *data, int row_stride, int width, int hei
 
 void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int height, bool saveAlpha, bool frombgra)
 {
-	if (mConnected & !mProcessingVideo)
+	if (SConfig.GetInstance().m_enableSocketComm)
 	{
-		std::lock_guard<std::mutex> lock(mLock);
-		mProcessingVideo = true;
-		if (mProcessingThread.joinable())
+		if (mConnected & !mProcessingVideo)
 		{
-			mProcessingThread.join();
+			std::lock_guard<std::mutex> lock(mLock);
+			mProcessingVideo = true;
+			if (mProcessingThread.joinable())
+			{
+				mProcessingThread.join();
+			}
+			mProcessingThread =
+			    std::thread(&OutputComm::ProcessVideo, this, data, row_stride, width, height, saveAlpha, frombgra);
 		}
-		mProcessingThread =
-		    std::thread(&OutputComm::ProcessVideo, this, data, row_stride, width, height, saveAlpha, frombgra);
-	}
 
-	if (mFrameCount >= std::numeric_limits<uint32_t>::max())
-	{
-		mFrameCount = 0;
-	}
-	else
-	{
-		mFrameCount++;
+		if (mFrameCount >= std::numeric_limits<uint32_t>::max())
+		{
+			mFrameCount = 0;
+		}
+		else
+		{
+			mFrameCount++;
+		}
 	}
 }
 
 void OutputComm::SendUpdate(std::vector<u8> &json_message)
 {
-	if (mConnected)
+	if (mConnected && SConfig.GetInstance().m_enableSocketComm)
 	{
 		sf::Packet packet;
 		auto current_time = GetTimeSinceEpoch();
@@ -239,7 +242,7 @@ void OutputComm::SendUpdate(std::vector<u8> &json_message)
 
 void OutputComm::SendUpdate(u32 m_device_number, GCPadStatus &pad_status)
 {
-	if (mConnected)
+	if (mConnected && SConfig.GetInstance().m_enableSocketComm)
 	{
 		auto current_time = GetTimeSinceEpoch();
 		sf::Packet packet;
