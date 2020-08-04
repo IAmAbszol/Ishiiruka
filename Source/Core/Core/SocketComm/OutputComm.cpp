@@ -179,6 +179,7 @@ void OutputComm::ProcessVideo(const u8 *data, int row_stride, int width, int hei
 		data_packet << std::get<0>(current_time);
 		data_packet << std::get<1>(current_time);
 		data_packet.append(reinterpret_cast<const char *>(&jpeg_buffer[m_current_pos]), block_size);
+
 		if (SendUdpMessage(data_packet) != sf::Socket::Done)
 		{
 			std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool "
@@ -198,7 +199,7 @@ void OutputComm::ProcessVideo(const u8 *data, int row_stride, int width, int hei
 
 void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int height, bool saveAlpha, bool frombgra)
 {
-	if (SConfig.GetInstance().m_enableSocketComm)
+	if (SConfig::GetInstance().m_enableSocketComm)
 	{
 		if (mConnected & !mProcessingVideo)
 		{
@@ -225,7 +226,7 @@ void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int heigh
 
 void OutputComm::SendUpdate(std::vector<u8> &json_message)
 {
-	if (mConnected && SConfig.GetInstance().m_enableSocketComm)
+	if (mConnected && SConfig::GetInstance().m_enableSocketComm)
 	{
 		sf::Packet packet;
 		auto current_time = GetTimeSinceEpoch();
@@ -242,7 +243,7 @@ void OutputComm::SendUpdate(std::vector<u8> &json_message)
 
 void OutputComm::SendUpdate(u32 m_device_number, GCPadStatus &pad_status)
 {
-	if (mConnected && SConfig.GetInstance().m_enableSocketComm)
+	if (mConnected && SConfig::GetInstance().m_enableSocketComm)
 	{
 		auto current_time = GetTimeSinceEpoch();
 		sf::Packet packet;
