@@ -344,6 +344,13 @@ void CEXISlippi::prepareGameInfo()
 		return;
 	}
 
+	// Send the entire game over the line
+	//m_output_comm.SendUpdate(*m_current_game);
+	if (m_current_game->GetGame()->data_vec.size() >= 1)
+	{
+		m_output_comm.SendUpdate(m_current_game->GetGame()->data_vec[0]);
+	}
+
 	// Return success code
 	m_read_queue.push_back(1);
 
@@ -605,6 +612,13 @@ void CEXISlippi::prepareFrameData(u8 *payload)
 		lastFFWFrame = frameIndex;
 	}
 
+	// Send update for Pre/Post -- Add Start/End later
+	auto frame = m_current_game->GetFrame(frameIndex);
+	for (auto frame_data : frame->data_vec)
+	{
+		m_output_comm.SendUpdate(frame_data);
+	}
+
 	// Return success code
 	m_read_queue.push_back(requestResultCode);
 
@@ -761,6 +775,10 @@ void CEXISlippi::DMAWrite(u32 _uAddr, u32 _uSize)
 		{
 		case CMD_RECEIVE_GAME_END:
 			writeToFile(&memPtr[bufLoc], payloadLen + 1, "close");
+			if (m_current_game && m_current_game->GetGame()->data_vec.size() >= 2)
+			{
+				m_output_comm.SendUpdate(m_current_game->GetGame()->data_vec[1]);
+			}
 			break;
 		case CMD_PREPARE_REPLAY:
 			// log.open("log.txt");

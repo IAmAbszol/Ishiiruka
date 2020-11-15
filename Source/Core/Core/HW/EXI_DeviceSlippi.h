@@ -72,7 +72,7 @@ private:
 
 	// .slp File creation stuff
 	u32 writtenByteCount = 0;
-	
+
 	// vars for metadata generation
 	time_t gameStartTime;
 	int32_t lastFrame;

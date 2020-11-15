@@ -1,11 +1,12 @@
 #pragma once
 
-#include <string>
 #include <array>
-#include <vector>
-#include <unordered_map>
-#include <iostream>
+#include <functional>
 #include <fstream>
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace Slippi {
   const uint8_t EVENT_PAYLOAD_SIZES = 0x35;
@@ -60,6 +61,7 @@ namespace Slippi {
     bool inputsFullyFetched = false;
     std::unordered_map<uint8_t, PlayerFrameData> players;
     std::unordered_map<uint8_t, PlayerFrameData> followers;
+	std::vector<std::vector<uint8_t>> data_vec;
   } FrameData;
 
   typedef struct {
@@ -91,6 +93,7 @@ namespace Slippi {
 
     //From OnGameEnd event
     uint8_t winCondition;
+	std::vector<std::vector<uint8_t>> data_vec;
   } Game;
 
   // TODO: This shouldn't be static. Doesn't matter too much atm because we always
@@ -105,6 +108,7 @@ namespace Slippi {
   class SlippiGame
   {
   public:
+    SlippiGame();
     static SlippiGame* FromFile(std::string path);
     bool AreSettingsLoaded();
     bool DoesFrameExist(int32_t frame);
@@ -114,6 +118,7 @@ namespace Slippi {
     GameSettings* GetSettings();
     bool DoesPlayerExist(int8_t port);
     bool IsProcessingComplete();
+	Game* GetGame();
   private:
     Game* game;
     std::ifstream* file;

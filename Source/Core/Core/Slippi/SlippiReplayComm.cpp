@@ -1,8 +1,12 @@
+#include <functional>
+#include <vector>
+
 #include "SlippiReplayComm.h"
 #include "Common/FileUtil.h"
 
 #include "Common/Logging/LogManager.h"
 #include "Core/ConfigManager.h"
+#include "Core/SocketComm/OutputComm.hpp"
 
 // https://stackoverflow.com/questions/216823/whats-the-best-way-to-trim-stdstring
 // trim from start (in place)

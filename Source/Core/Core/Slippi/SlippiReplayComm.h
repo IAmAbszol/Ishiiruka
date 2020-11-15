@@ -29,7 +29,7 @@ class SlippiReplayComm
 		std::string commandId;
 		std::queue<WatchSettings> queue;
 	} CommSettings;
-	
+
 	SlippiReplayComm();
 	~SlippiReplayComm();
 
@@ -48,7 +48,7 @@ class SlippiReplayComm
 	json fileData;
 	std::string previousReplayLoaded;
 	std::string previousCommandId;
-	
+
 	// Queue stuff
 	bool isFirstLoad = true;
 	bool provideNew = false;

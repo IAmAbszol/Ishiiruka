@@ -18,7 +18,7 @@ InputComm::InputComm(u32 device_number) :
                             mDeviceNumber(device_number),
                             mPort(DEFAULT_PORT + device_number)
 {
-    if(mPort && SConfig.GetInstance().m_enableSocketComm)
+    if(mPort && SConfig::GetInstance().m_enableSocketComm)
     {
         // Binding failed, panic! 
         if(mListenerSocket.bind(mPort) == sf::Socket::Done)

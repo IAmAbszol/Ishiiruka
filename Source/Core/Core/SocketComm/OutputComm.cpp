@@ -18,9 +18,9 @@ namespace SocketComm
 OutputComm::OutputComm(OutputType m_type)
     : sending_address(SConfig::GetInstance().m_sendingIpAddress)
 {
-	CONTROLLER_PORT 	= (u16) SConfig::GetInstance().m_controllerPort;
-	SLIPPI_PORT			= (u16) SConfig::GetInstance().m_slippiPort;
-	VIDEO_PORT			= (u16) SConfig::GetInstance().m_videoPort;
+	CONTROLLER_PORT = (u16)SConfig::GetInstance().m_controllerPort;
+	SLIPPI_PORT = (u16)SConfig::GetInstance().m_slippiPort;
+	VIDEO_PORT = (u16)SConfig::GetInstance().m_videoPort;
 	switch (m_type)
 	{
 	case OutputType::CONTROLLER_BACKEND:
@@ -64,7 +64,8 @@ OutputComm::~OutputComm()
 std::tuple<uint32_t, uint32_t> OutputComm::GetTimeSinceEpoch()
 {
 	uint64_t current_time =
-	    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
+	        .count();
 	double seconds = 0;
 	uint32_t microseconds = (uint32_t)(std::modf((double)(current_time / pow(10, 6)), &seconds) * pow(10, 6));
 
@@ -179,13 +180,13 @@ void OutputComm::ProcessVideo(const u8 *data, int row_stride, int width, int hei
 		data_packet << std::get<0>(current_time);
 		data_packet << std::get<1>(current_time);
 		data_packet.append(reinterpret_cast<const char *>(&jpeg_buffer[m_current_pos]), block_size);
+
 		if (SendUdpMessage(data_packet) != sf::Socket::Done)
 		{
 			std::cout << "SendUpdate(const u8* data, int row_stride, int width, int height, bool saveAlpha, bool "
 			             "frombgra) failed to send."
 			          << std::endl;
 		}
-
 		m_current_pos += block_size;
 	}
 	buffer.clear();
@@ -198,7 +199,7 @@ void OutputComm::ProcessVideo(const u8 *data, int row_stride, int width, int hei
 
 void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int height, bool saveAlpha, bool frombgra)
 {
-	if (SConfig.GetInstance().m_enableSocketComm)
+	if (SConfig::GetInstance().m_enableSocketComm && false)
 	{
 		if (mConnected & !mProcessingVideo)
 		{
@@ -225,7 +226,7 @@ void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int heigh
 
 void OutputComm::SendUpdate(std::vector<u8> &json_message)
 {
-	if (mConnected && SConfig.GetInstance().m_enableSocketComm)
+	if (mConnected && SConfig::GetInstance().m_enableSocketComm)
 	{
 		sf::Packet packet;
 		auto current_time = GetTimeSinceEpoch();
@@ -242,7 +243,7 @@ void OutputComm::SendUpdate(std::vector<u8> &json_message)
 
 void OutputComm::SendUpdate(u32 m_device_number, GCPadStatus &pad_status)
 {
-	if (mConnected && SConfig.GetInstance().m_enableSocketComm)
+	if (mConnected && SConfig::GetInstance().m_enableSocketComm)
 	{
 		auto current_time = GetTimeSinceEpoch();
 		sf::Packet packet;
@@ -256,6 +257,37 @@ void OutputComm::SendUpdate(u32 m_device_number, GCPadStatus &pad_status)
 		}
 	}
 }
+
+void OutputComm::SendUpdate(Slippi::SlippiGame& game)
+{
+	if (mConnected && SConfig::GetInstance().m_enableSocketComm)
+	{
+		std::cout << "Start :" << game.GetGame()->data_vec[0].size() << "\tEnd :" << game.GetGame()->data_vec[1].size()
+		          << std::endl;
+		//Send Start Data
+		if (game.GetGame()->data_vec.size() >= 1)
+		{
+			SendUpdate(game.GetGame()->data_vec[0]);
+		}
+
+		//Send all frames, pre & post data
+		for (int32_t frame_index = 0; frame_index < game.GetFrameCount(); frame_index++)
+		{
+			auto frame = game.GetFrame(frame_index);
+			for (auto& data : frame->data_vec)
+			{
+				SendUpdate(data);
+			}
+		}
+
+		//Send End Data
+		if (game.GetGame()->data_vec.size() >= 2)
+		{
+			SendUpdate(game.GetGame()->data_vec[1]);
+		}
+	}
+}
+
 int OutputComm::SendTcpMessage(sf::Packet &packet)
 {
 	sf::Socket::Status send_status;

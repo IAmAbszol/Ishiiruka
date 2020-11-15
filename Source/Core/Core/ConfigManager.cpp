@@ -307,7 +307,7 @@ void SConfig::SaveCoreSettings(IniFile& ini)
 	core->Set("AllowAllNetplayVersions", bAllowAllNetplayVersions);
 	core->Set("QoSEnabled", bQoSEnabled);
 	core->Set("AdapterWarning", bAdapterWarning);
-        core->Set("ShownLagReductionWarning", bHasShownLagReductionWarning);
+    core->Set("ShownLagReductionWarning", bHasShownLagReductionWarning);
 	// SocketComm I/O
 	core->Set("EnableSocketComm", m_enableSocketComm);
 	core->Set("ExportTrainingData", m_exportTrainingData);
@@ -658,9 +658,7 @@ void SConfig::LoadMovieSettings(IniFile& ini)
 
 	movie->Get("PauseMovie", &m_PauseMovie, false);
 	movie->Get("Author", &m_strMovieAuthor, "");
-	std::cout << m_DumpFrames << std::endl;
 	movie->Get("DumpFrames", &m_DumpFrames, false);
-	std::cout << m_DumpFrames << std::endl;
 	movie->Get("DumpFramesSilent", &m_DumpFramesSilent, false);
 	movie->Get("ShowInputDisplay", &m_ShowInputDisplay, false);
 	movie->Get("ShowRTC", &m_ShowRTC, false);

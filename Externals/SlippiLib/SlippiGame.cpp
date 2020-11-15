@@ -43,7 +43,10 @@ namespace Slippi {
   }
 
   void handleGameInit(Game* game, uint32_t maxSize) {
-    int idx = 0;
+	  
+	  game->data_vec.push_back(std::vector<uint8_t>(&data[0], &data[maxSize]));
+	  game->data_vec.back().insert(game->data_vec.back().begin(), (uint8_t)EVENT_GAME_INIT);
+	  int idx = 0;
 
     // Read version number
     for (int i = 0; i < 4; i++) {
@@ -132,6 +135,9 @@ namespace Slippi {
       frame = &game->frameData[frameCount];
     }
 
+	frame->data_vec.push_back(std::vector<uint8_t>(&data[0], &data[maxSize]));
+	frame->data_vec.back().insert(frame->data_vec.back().begin(), (uint8_t)EVENT_PRE_FRAME_UPDATE);
+
     frame->frame = frameCount;
 
     PlayerFrameData* p = new PlayerFrameData();
@@ -196,6 +202,9 @@ namespace Slippi {
       // in this frame, so let's fetch it.
       frame = &game->frameData[frameCount];
     }
+	
+	frame->data_vec.push_back(std::vector<uint8_t>(&data[0], &data[maxSize]));
+	frame->data_vec.back().insert(frame->data_vec.back().begin(), (uint8_t)EVENT_POST_FRAME_UPDATE);
 
     // As soon as a post frame update happens, we know we have received all the inputs
     // This is used to determine if a frame is ready to be used for a replay (for mirroring)
@@ -233,6 +242,8 @@ namespace Slippi {
   void handleGameEnd(Game* game, uint32_t maxSize) {
     int idx = 0;
 
+	game->data_vec.push_back(std::vector<uint8_t>(&data[0], &data[maxSize]));
+	game->data_vec.back().insert(game->data_vec.back().begin(), (uint8_t)EVENT_GAME_END);
     game->winCondition = readByte(data, idx, maxSize, 0);
   }
 
@@ -299,6 +310,11 @@ namespace Slippi {
     return messageSizes;
   }
 
+  Game* SlippiGame::GetGame()
+  {
+	  return game;
+  }
+
   void SlippiGame::processData() {
     if (isProcessingComplete) {
       // If we have finished processing this file, return
@@ -347,10 +363,8 @@ namespace Slippi {
     file->seekg(0, std::ios::end);
     int endPos = (int)file->tellg();
     int sizeToRead = endPos - startPos;
+
     file->seekg(startPos);
-    //log << "Size to read: " << sizeToRead << "\n";
-    //log << "Start Pos: " << startPos << "\n";
-    //log << "End Pos: " << endPos << "\n\n";
     if (sizeToRead <= 0) {
       return;
     }
@@ -376,6 +390,7 @@ namespace Slippi {
       }
 
       data = (uint8_t*)&newData[newDataPos + 1];
+	  
       switch (command) {
       case EVENT_GAME_INIT:
         handleGameInit(game, payloadSize);
@@ -405,6 +420,9 @@ namespace Slippi {
     }
   }
 
+  SlippiGame::SlippiGame()
+  {}
+
   SlippiGame* SlippiGame::FromFile(std::string path) {
     SlippiGame* result = new SlippiGame();
     result->game = new Game();
@@ -414,17 +432,6 @@ namespace Slippi {
     if (!result->file->is_open()) {
       return nullptr;
     }
-
-    //int fileLength = (int)file.tellg();
-    //int rawDataPos = getRawDataPosition(&file);
-    //uint32_t rawDataLength = getRawDataLength(&file, rawDataPos, fileLength);
-    //asmEvents = getMessageSizes(&file, rawDataPos);
-
-    //std::vector<char> rawData(rawDataLength);
-    //file.seekg(rawDataPos, std::ios::beg);
-    //file.read(&rawData[0], rawDataLength);
-
-    //SlippiGame* result = processFile((uint8_t*)&rawData[0], rawDataLength);
 
     return result;
   }

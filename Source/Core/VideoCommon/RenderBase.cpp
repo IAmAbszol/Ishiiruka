@@ -886,7 +886,7 @@ bool Renderer::IsFrameDumping()
 	if (SConfig::GetInstance().m_exportTrainingData)
 	{
 		auto timestamp_tuple = m_output_comm.GetTimeSinceEpoch();
-		std::string file_name("data_" + std::get<0>(timestamp_tuple) + "" + std::get<1>(timestamp_tuple) + ".png");
+		std::string file_name("data_" + std::to_string(std::get<0>(timestamp_tuple)) + "" + std::to_string(std::get<1>(timestamp_tuple)) + ".png");
 		SaveScreenshot(file_name, true);
 	}
 	if (!ret)
