@@ -199,7 +199,7 @@ void OutputComm::ProcessVideo(const u8 *data, int row_stride, int width, int hei
 
 void OutputComm::SendUpdate(const u8 *data, int row_stride, int width, int height, bool saveAlpha, bool frombgra)
 {
-	if (SConfig::GetInstance().m_enableSocketComm && false)
+	if (SConfig::GetInstance().m_enableSocketComm)
 	{
 		if (mConnected & !mProcessingVideo)
 		{
