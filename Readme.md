@@ -17,10 +17,8 @@ To have everything transition smoothly, I had originally compiled the project to
 | Stress test UDP vs TCP implementation      | Complete      | 04/21/2020 |
 | Update CMake files      | Discarded      | 04/18/2020 |
 | Docker Dolphin Container w/ X11 | Discarded | 06/10/2020 |
-| Build character selection macro | In Progress      | 03/01/2020 |
 | Write Python code to parse chunked Pre/Post frame updates | Complete | 05/30/2020 |
 | Write Python code to parse and convert image data to PNG | Complete | 05/30/2020 |
-| Add dump frames to successfully save images to dump directory for playback, print when done | In Progress | 03/01/2020|
 
 ## Setup
 
