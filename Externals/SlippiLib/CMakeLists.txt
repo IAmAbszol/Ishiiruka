@@ -8,4 +8,4 @@ set(SRCS
 add_definitions(-std=c++11)
 
 add_library(SlippiLib STATIC ${SRCS})
-target_link_libraries(SocketComm core)
+#target_link_libraries(core)
